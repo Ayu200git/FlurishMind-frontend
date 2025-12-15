@@ -32,7 +32,7 @@ const UserProfile = ({ token, userId, onLogout }) => {
       };
 
       try {
-        const res = await fetch('http://localhost:8080/graphql', {
+        const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -90,8 +90,8 @@ const UserProfile = ({ token, userId, onLogout }) => {
             <div className="user-profile__header">
               <div className="user-profile__avatar-large">
                 {user.avatar ? (
-                  <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:8080/${user.avatar}`} alt={user.name} />
-                ) : (
+                   <img src={ user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_BACKEND_URL}/${user.avatar}`} alt={user.name}/>
+                  ) : (
                   initials
                 )}
               </div>

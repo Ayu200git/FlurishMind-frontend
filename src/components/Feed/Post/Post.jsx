@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Button from '../../Button/Button';
 import Image from '../../Image/Image';
 import Comments from '../../Comments/Comments';
 import './Post.css';
+
+/* ✅ helper to safely resolve image urls */
+const getImageUrl = (path) => {
+  if (!path) return null;
+  return path.startsWith('http')
+    ? path
+    : `${import.meta.env.VITE_BACKEND_URL}/${path}`;
+};
 
 const Post = ({
   author,
@@ -31,34 +39,42 @@ const Post = ({
   onDeleteReply,
   token
 }) => {
-  const isCreator = currentUserId && creatorId && currentUserId === creatorId;
+  const isCreator =
+    currentUserId && creatorId && currentUserId === creatorId;
+
   const isLiked =
     currentUserId &&
     likes &&
-    likes.some(like => like._id?.toString() === currentUserId?.toString());
+    likes.some(
+      (like) => like._id?.toString() === currentUserId?.toString()
+    );
 
-  const imageUrl = image
-    ? image.startsWith('http') ? image : `http://localhost:8080/${image}`
-    : null;
+  /* ✅ FIXED image url */
+  const imageUrl = image ? getImageUrl(image) : null;
+  const authorAvatar = authorImage ? getImageUrl(authorImage) : null;
 
   return (
     <article className="post">
       <header className="post__header">
         <div className="post__user">
-          {authorImage ? (
+          {authorAvatar ? (
             <img
-              src={authorImage.startsWith('http') ? authorImage : `http://localhost:8080/${authorImage}`}
+              src={authorAvatar}
               alt={author}
               className="post__user-image"
             />
           ) : (
-            <div className="post__user-placeholder">{author[0]}</div>
+            <div className="post__user-placeholder">
+              {author?.[0]}
+            </div>
           )}
+
           <div className="post__user-info">
             <span className="post__author">{author}</span>
             <span className="post__date">{date}</span>
           </div>
         </div>
+
         <h1 className="post__title">{title}</h1>
       </header>
 
@@ -91,7 +107,11 @@ const Post = ({
         ) : (
           <>
             {onLike && (
-              <Button mode="flat" onClick={onLike} design={isLiked ? 'accent' : null}>
+              <Button
+                mode="flat"
+                onClick={onLike}
+                design={isLiked ? 'accent' : null}
+              >
                 {isLiked ? '❤️ Liked' : '🤍 Like'} ({likesCount || 0})
               </Button>
             )}

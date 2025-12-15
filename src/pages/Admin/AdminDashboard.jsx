@@ -48,7 +48,7 @@ const AdminDashboard = ({ token, currentUserId }) => {
       `,
     };
 
-    const res = await fetch('http://localhost:8080/graphql', {
+    const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ const AdminDashboard = ({ token, currentUserId }) => {
       `,
     };
 
-    const res = await fetch('http://localhost:8080/graphql', {
+    const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const AdminDashboard = ({ token, currentUserId }) => {
         variables: { userId },
       };
 
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ const AdminDashboard = ({ token, currentUserId }) => {
         variables: { userId },
       };
 
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

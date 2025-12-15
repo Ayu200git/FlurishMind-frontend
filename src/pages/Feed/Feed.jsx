@@ -33,7 +33,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         query: `query { user { status } }`
       };
       try {
-        const res = await fetch('http://localhost:8080/graphql', {
+        const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       };
 
       try {
-        const res = await fetch('http://localhost:8080/graphql', {
+        const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       variables: { status }
     };
     try {
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         const formData = new FormData();
         formData.append('image', postData.image);
         if (editPost?.imageUrl) formData.append('oldPath', editPost.imageUrl);
-        const uploadRes = await fetch('http://localhost:8080/post-image', {
+        const uploadRes = await fetch( import.meta.env.VITE_BACKEND_URL + '/post-image', {
           method: 'PUT',
           headers: { Authorization: 'Bearer ' + authToken },
           body: formData
@@ -181,7 +181,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
             variables: { title: postData.title, content: postData.content, imageUrl }
           };
 
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -208,7 +208,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     setError(null);
     try {
       const graphqlQuery = { query: `mutation DeletePost($id: ID!) { deletePost(id: $id) }`, variables: { id: postId } };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -239,7 +239,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { postId }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -257,7 +257,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     if (!authToken) return setFlashMessage({ message: 'Please login to comment', type: 'error' });
     try {
       const graphqlQuery = { query: `mutation AddComment($content: String!, $postId: ID!) { addComment(commentInput: { content: $content, postId: $postId }) { _id content creator { _id name avatar } createdAt parentId replies { _id } } }`, variables: { content, postId } };
-      const res = await fetch('http://localhost:8080/graphql', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
       loadPosts();
@@ -271,7 +271,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     if (!authToken) return setFlashMessage({ message: 'Please login to edit comment', type: 'error' });
     try {
       const graphqlQuery = { query: `mutation UpdateComment($commentId: ID!, $content: String!) { updateComment(commentId: $commentId, content: $content) { _id content creator { _id name avatar } createdAt parentId } }`, variables: { commentId, content } };
-      const res = await fetch('http://localhost:8080/graphql', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
+      const res = await fetch( import.meta.env.VITE_GRAPHQL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
       loadPosts();
@@ -285,7 +285,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     if (!authToken) return setFlashMessage({ message: 'Please login to delete comment', type: 'error' });
     try {
       const graphqlQuery = { query: `mutation DeleteComment($commentId: ID!) { deleteComment(commentId: $commentId) }`, variables: { commentId } };
-      const res = await fetch('http://localhost:8080/graphql', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
       loadPosts();
@@ -310,7 +310,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { postId, page, limit: 5 }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch( import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -338,7 +338,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { commentId, page, limit: 5 }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -363,7 +363,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { content, postId: posts[0]?._id, parentId: commentId }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -389,7 +389,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { commentId: replyId, content }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -413,7 +413,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { commentId: replyId }
       };
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)

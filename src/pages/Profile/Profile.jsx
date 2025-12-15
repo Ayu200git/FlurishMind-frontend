@@ -11,24 +11,36 @@ import { required } from '../../util/validators';
 import { generateBase64FromImage } from '../../util/image';
 import './Profile.css';
 
+/* ✅ Helper: replaces localhost safely */
+const getImageUrl = (path) => {
+  if (!path) return null;
+  return path.startsWith('http')
+    ? path
+    : `${import.meta.env.VITE_BACKEND_URL}/${path}`;
+};
+
 const Profile = ({ token, currentUserId }) => {
   const { userId: paramUserId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(searchParams.get('edit') === 'true');
   const [error, setError] = useState(null);
   const [flashMessage, setFlashMessage] = useState(null);
+
   const [formData, setFormData] = useState({
     name: { value: '', valid: false, touched: false, validators: [required] },
     username: { value: '', valid: true, touched: false, validators: [] },
     bio: { value: '', valid: true, touched: false, validators: [] },
     status: { value: '', valid: true, touched: false, validators: [] }
   });
+
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [formIsValid, setFormIsValid] = useState(false);
+
   const targetUserId = paramUserId || currentUserId;
   const isOwnProfile = !paramUserId || targetUserId === currentUserId;
 
@@ -40,7 +52,7 @@ const Profile = ({ token, currentUserId }) => {
 
     const fetchUser = async () => {
       setLoading(true);
-      
+
       const graphqlQuery = {
         query: `
           query GetUser($userId: ID!) {
@@ -60,7 +72,7 @@ const Profile = ({ token, currentUserId }) => {
       };
 
       try {
-        const res = await fetch('http://localhost:8080/graphql', {
+        const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -74,19 +86,21 @@ const Profile = ({ token, currentUserId }) => {
 
         const userData = resData.data.userById;
         setUser(userData);
+
         setFormData(prev => ({
           name: { ...prev.name, value: userData.name, valid: true },
           username: { ...prev.username, value: userData.username || '', valid: true },
           bio: { ...prev.bio, value: userData.bio || '', valid: true },
           status: { ...prev.status, value: userData.status || '', valid: true }
         }));
+
         if (userData.avatar) {
-          setAvatarPreview(userData.avatar.startsWith('http') ? userData.avatar : `http://localhost:8080/${userData.avatar}`);
+          setAvatarPreview(getImageUrl(userData.avatar));
         }
+
         setFormIsValid(true);
         setLoading(false);
       } catch (err) {
-        console.error(err);
         setError(err.message || 'Failed to fetch user');
         setLoading(false);
       }
@@ -105,7 +119,7 @@ const Profile = ({ token, currentUserId }) => {
     }
 
     setFormData(prevForm => {
-      const isValid = prevForm[input].validators.every(validator => validator(value));
+      const isValid = prevForm[input].validators.every(v => v(value));
       const updatedForm = {
         ...prevForm,
         [input]: {
@@ -115,8 +129,7 @@ const Profile = ({ token, currentUserId }) => {
           touched: true
         }
       };
-      const formValid = Object.values(updatedForm).every(field => field.valid);
-      setFormIsValid(formValid);
+      setFormIsValid(Object.values(updatedForm).every(f => f.valid));
       return updatedForm;
     });
   };
@@ -127,24 +140,21 @@ const Profile = ({ token, currentUserId }) => {
     try {
       let avatarUrl = user?.avatar || '';
 
-      // Upload avatar if a new file was selected
       if (avatarFile) {
-        const formData = new FormData();
-        formData.append('image', avatarFile);
-        if (user?.avatar) {
-          formData.append('oldPath', user.avatar);
-        }
+        const fd = new FormData();
+        fd.append('image', avatarFile);
+        if (user?.avatar) fd.append('oldPath', user.avatar);
 
-        const uploadRes = await fetch('http://localhost:8080/post-image', {
-          method: 'PUT',
-          headers: {
-            Authorization: 'Bearer ' + token,
-          },
-          body: formData,
-        });
+        const uploadRes = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/post-image`,
+          {
+            method: 'PUT',
+            headers: { Authorization: 'Bearer ' + token },
+            body: fd,
+          }
+        );
 
         if (!uploadRes.ok) throw new Error('Failed to upload avatar');
-
         const uploadData = await uploadRes.json();
         avatarUrl = uploadData.filePath;
       }
@@ -172,7 +182,7 @@ const Profile = ({ token, currentUserId }) => {
         },
       };
 
-      const res = await fetch('http://localhost:8080/graphql', {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -186,25 +196,20 @@ const Profile = ({ token, currentUserId }) => {
 
       const updatedUser = resData.data.updateUser;
       setUser(updatedUser);
-      if (updatedUser.avatar) {
-        setAvatarPreview(updatedUser.avatar.startsWith('http') ? updatedUser.avatar : `http://localhost:8080/${updatedUser.avatar}`);
-      }
+      setAvatarPreview(getImageUrl(updatedUser.avatar));
+
       setAvatarFile(null);
       setEditing(false);
       navigate(`/profile/${targetUserId}`, { replace: true });
+
       setFlashMessage({ message: 'Profile updated successfully!', type: 'success' });
     } catch (err) {
-      console.error(err);
       setFlashMessage({ message: err.message || 'Failed to update profile', type: 'error' });
     }
   };
 
   if (loading) {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-        <Loader />
-      </div>
-    );
+    return <div style={{ textAlign: 'center', marginTop: '2rem' }}><Loader /></div>;
   }
 
   if (!user) return null;
@@ -218,19 +223,15 @@ const Profile = ({ token, currentUserId }) => {
 
   return (
     <div className="profile-page">
-      <FlashMessage 
-        message={flashMessage?.message} 
-        type={flashMessage?.type}
-        onClose={() => setFlashMessage(null)}
-      />
+      <FlashMessage message={flashMessage?.message} type={flashMessage?.type} onClose={() => setFlashMessage(null)} />
       <ErrorHandler error={error} onHandle={() => setError(null)} />
-      
+
       <div className="profile-header">
         <div className="profile-avatar">
           {avatarPreview ? (
-            <img src={avatarPreview.startsWith('http') ? avatarPreview : `http://localhost:8080/${avatarPreview}`} alt={user.name} />
+            <img src={getImageUrl(avatarPreview)} alt={user.name} />
           ) : user.avatar ? (
-            <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:8080/${user.avatar}`} alt={user.name} />
+            <img src={getImageUrl(user.avatar)} alt={user.name} />
           ) : (
             <div className="profile-avatar-placeholder">{initials}</div>
           )}
@@ -246,104 +247,25 @@ const Profile = ({ token, currentUserId }) => {
             <label>Email</label>
             <p>{user.email}</p>
           </div>
-          
+
           {editing && isOwnProfile ? (
             <>
-              <div className="profile-field">
-                <FilePicker
-                  id="avatar"
-                  label="Profile Picture"
-                  onChange={inputChangeHandler}
-                  valid={true}
-                  touched={false}
-                />
-                {avatarPreview && (
-                  <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                    <Image imageUrl={avatarPreview} contain left />
-                  </div>
-                )}
-              </div>
-              <div className="profile-field">
-                <Input
-                  id="name"
-                  label="Name"
-                  control="input"
-                  value={formData.name.value}
-                  onChange={inputChangeHandler}
-                  valid={formData.name.valid}
-                  touched={formData.name.touched}
-                />
-              </div>
-              <div className="profile-field">
-                <Input
-                  id="username"
-                  label="Username"
-                  control="input"
-                  value={formData.username.value}
-                  onChange={inputChangeHandler}
-                  valid={formData.username.valid}
-                  touched={formData.username.touched}
-                  placeholder="Choose a username"
-                />
-              </div>
-              <div className="profile-field">
-                <Input
-                  id="bio"
-                  label="Bio"
-                  control="textarea"
-                  value={formData.bio.value}
-                  onChange={inputChangeHandler}
-                  valid={formData.bio.valid}
-                  touched={formData.bio.touched}
-                  placeholder="Tell us about yourself"
-                />
-              </div>
-              <div className="profile-field">
-                <Input
-                  id="status"
-                  label="Status"
-                  control="input"
-                  value={formData.status.value}
-                  onChange={inputChangeHandler}
-                  valid={formData.status.valid}
-                  touched={formData.status.touched}
-                  placeholder="What's on your mind?"
-                />
-              </div>
+              <FilePicker id="avatar" label="Profile Picture" onChange={inputChangeHandler} />
+              <Input id="name" label="Name" control="input" value={formData.name.value} onChange={inputChangeHandler} />
+              <Input id="username" label="Username" control="input" value={formData.username.value} onChange={inputChangeHandler} />
+              <Input id="bio" label="Bio" control="textarea" value={formData.bio.value} onChange={inputChangeHandler} />
+              <Input id="status" label="Status" control="input" value={formData.status.value} onChange={inputChangeHandler} />
+
               <div className="profile-actions">
-                <Button mode="raised" onClick={handleSave} disabled={!formIsValid}>
-                  Save
-                </Button>
-                <Button mode="flat" onClick={() => {
-                  setEditing(false);
-                  navigate(`/profile/${targetUserId}`, { replace: true });
-                }}>
-                  Cancel
-                </Button>
+                <Button mode="raised" onClick={handleSave}>Save</Button>
+                <Button mode="flat" onClick={() => setEditing(false)}>Cancel</Button>
               </div>
             </>
           ) : (
             <>
-              {user.bio && (
-                <div className="profile-field">
-                  <label>Bio</label>
-                  <p>{user.bio}</p>
-                </div>
-              )}
-              <div className="profile-field">
-                <label>Status</label>
-                <p>{user.status || 'No status set'}</p>
-              </div>
-              {isOwnProfile && (
-                <div className="profile-actions">
-                  <Button mode="raised" onClick={() => {
-                    setEditing(true);
-                    navigate(`/profile/${targetUserId}?edit=true`, { replace: true });
-                  }}>
-                    Edit Profile
-                  </Button>
-                </div>
-              )}
+              {user.bio && <p>{user.bio}</p>}
+              <p>{user.status}</p>
+              {isOwnProfile && <Button onClick={() => setEditing(true)}>Edit Profile</Button>}
             </>
           )}
         </div>
@@ -353,4 +275,3 @@ const Profile = ({ token, currentUserId }) => {
 };
 
 export default Profile;
-
