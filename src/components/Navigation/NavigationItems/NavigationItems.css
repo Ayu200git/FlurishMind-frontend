@@ -1,0 +1,80 @@
+.navigation-item {
+  padding: 0 1.5rem;
+}
+
+.navigation-item a {
+  text-decoration: none;
+  color: white;
+}
+
+.navigation-item.mobile {
+  font-size: 1rem;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.navigation-item.mobile a {
+  color: #ffffff;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  display: block;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s, color 0.2s;
+  background: #3b0062;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+}
+
+.navigation-item.mobile button {
+  font: inherit;
+  background: #3b0062;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 1rem;
+  transition: background 0.2s, color 0.2s;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+}
+
+.navigation-item a:hover,
+.navigation-item a:active,
+.navigation-item a.active {
+  color: var(--accent-color);
+}
+
+.navigation-item.mobile a:hover,
+.navigation-item.mobile button:hover {
+  background: #520288;
+  color: #ffffff;
+}
+
+.navigation-item.mobile a.active {
+  background: #520288;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.navigation-item:last-of-type {
+  padding-right: 0;
+}
+
+.navigation-item button {
+  font: inherit;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+}
+
+.navigation-item button:hover,
+.navigation-item button:active {
+  color: #fab83f;
+}

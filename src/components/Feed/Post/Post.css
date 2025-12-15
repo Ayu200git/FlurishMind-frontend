@@ -1,0 +1,145 @@
+.post {
+  margin: 1rem 0;
+  border: 1px solid var(--accent-color);
+  border-radius: 5px;
+  padding: 0.5rem;
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.post__user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.post__user-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.post__user-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.post__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.post__author {
+  font-weight: bold;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.post__date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.post__meta {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.post__title {
+  font-size: 1.5rem;
+  margin: 1rem 0;
+  color: var(--text-primary);
+}
+
+.post__image {
+  height: 15rem;
+  width: 100%;
+}
+
+.post__actions {
+  text-align: right;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.post__content {
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 1rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .post {
+    padding: 1.5rem;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .post__title {
+    font-size: 1.7rem;
+  }
+
+  .post__user-image,
+  .post__user-placeholder {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 1024px) {
+  .post {
+    padding: 1.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .post__title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .post {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+
+  .post__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post__actions button {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
+
+  .post__user-image,
+  .post__user-placeholder {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}

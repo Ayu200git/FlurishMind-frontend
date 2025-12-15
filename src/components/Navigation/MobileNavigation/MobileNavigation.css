@@ -1,0 +1,123 @@
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 30rem;
+  max-width: 90%;
+  background: var(--bg-primary);
+  box-shadow: 1px 0 8px var(--shadow);
+  transition: transform 0.3s ease-out, background-color 0.3s ease;
+  transform: translateX(-100%);
+  z-index: 200;
+  padding: 3rem 2rem;
+  overflow-y: auto;
+  display: none;
+}
+
+.mobile-nav.open {
+  transform: translateX(0);
+}
+
+.mobile-nav__items {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-nav__items.mobile {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.mobile-nav__items.mobile .navigation-item {
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    border-bottom: none;
+}
+
+.mobile-nav__items.mobile .navigation-item:last-child {
+    margin-bottom: 0;
+}
+
+.mobile-nav__items.mobile .navigation-item a,
+.mobile-nav__items.mobile .navigation-item button {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #ffffff;
+    background: #3b0062;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: block;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.mobile-nav__items.mobile .navigation-item a:hover,
+.mobile-nav__items.mobile .navigation-item button:hover {
+    background: #520288;
+    color: #ffffff;
+}
+
+.mobile-nav__items.mobile .navigation-item a.active {
+    background: #520288;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.mobile-nav__backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 199;
+}
+
+/* Mobile and Tablet: Show sidebar */
+@media (max-width: 1023px) {
+  .mobile-nav {
+    display: block;
+  }
+}
+
+/* Desktop: Hide sidebar */
+@media (min-width: 1024px) {
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+/* Tablet and Mobile: Same styling for consistency */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile-nav {
+    width: 30rem;
+    max-width: 90%;
+    padding: 3rem 2rem;
+  }
+}
+
+/* Mobile specific styles */
+@media (max-width: 767px) {
+  .mobile-nav {
+    width: 30rem;
+    max-width: 90%;
+    padding: 3rem 2rem;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .mobile-nav {
+    width: 100%;
+    max-width: 100%;
+    padding: 2rem 1rem;
+  }
+}

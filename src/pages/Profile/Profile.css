@@ -1,0 +1,150 @@
+.profile-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+.profile-avatar {
+  margin: 0 auto 1rem;
+  width: 120px;
+  height: 120px;
+}
+
+.profile-avatar img,
+.profile-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar img {
+  border: 3px solid var(--accent-color);
+}
+
+.profile-avatar-placeholder {
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.profile-header h1 {
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.profile-username {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.profile-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+.profile-content {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 2rem;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-field label {
+  font-weight: bold;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.profile-field p {
+  color: var(--text-secondary);
+  margin: 0;
+  padding: 0.5rem;
+  background: var(--bg-primary);
+  border-radius: 5px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .profile-page {
+    margin: 1.5rem auto;
+    padding: 1rem;
+    max-width: 700px;
+  }
+
+  .profile-header {
+    padding: 2rem;
+  }
+
+  .profile-avatar {
+    width: 110px;
+    height: 110px;
+  }
+
+  .profile-content {
+    padding: 2rem;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .profile-page {
+    margin: 1rem;
+    padding: 0.5rem;
+  }
+
+  .profile-header {
+    padding: 1.5rem;
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-content {
+    padding: 1.5rem;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+  }
+}
+

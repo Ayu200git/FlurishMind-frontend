@@ -1,0 +1,36 @@
+.theme-toggle {
+  background: none;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+  margin: 0 0.5rem;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle--light {
+  color: #3b0062;
+  background-color: #fff;
+}
+
+.theme-toggle--dark {
+  color: #fab83f;
+  background-color: #1a1a1a;
+}
+
+.theme-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 0, 98, 0.3);
+}
+

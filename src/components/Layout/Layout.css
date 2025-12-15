@@ -1,0 +1,31 @@
+.main-header {
+  width: 100%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 3.75rem; /* match toolbar height */
+  z-index: 100;
+  background-color: var(--bg-primary);
+}
+
+.content {
+  background-color: var(--bg-primary);
+  transition: background-color 0.3s ease;
+}
+
+/* Only apply top margin for pages that need it (like feed) */
+.content.with-navbar {
+  margin-top: 3.75rem; /* same as navbar height */
+  min-height: calc(100vh - 3.75rem);
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .content {
+    padding: 1rem 2rem;
+  }
+  .content.with-navbar {
+    margin-top: 3.75rem;
+    min-height: calc(100vh - 3.75rem);
+  }
+}
