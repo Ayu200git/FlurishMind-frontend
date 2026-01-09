@@ -4,12 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 
 import App from './App.jsx';
 import { ThemeProvider } from './context/ThemeContext';
+import { ViewModeProvider } from './context/ViewModeContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <ThemeProvider>
-      <App />
+      <ViewModeProvider>
+        <App />
+      </ViewModeProvider>
     </ThemeProvider>
   </BrowserRouter>
 );

@@ -13,16 +13,16 @@ const MainNavigation = ({ onOpenMobileNav, isAuth, onLogout, onNewPost, onEdit, 
   <nav className="main-nav">
     <MobileToggle onOpen={onOpenMobileNav} />
     <div className="main-nav__logo">
-       <NavLink to="/">
-        <img 
-          src="flurishmindlogo.png" 
-          alt="Logo" 
+      <NavLink to="/">
+        <img
+          src="flurishmindlogo.png"
+          alt="Logo"
           className="main-nav__logo-img"
         />
       </NavLink>
     </div>
     <div className="spacer" />
-    
+
     <div className="main-nav__mobile-items">
       {isAuth && userId && token && (
         <UserProfile token={token} userId={userId} onLogout={onLogout} />
@@ -31,8 +31,8 @@ const MainNavigation = ({ onOpenMobileNav, isAuth, onLogout, onNewPost, onEdit, 
     </div>
 
     <ul className="main-nav__items">
-      <NavigationItems 
-        isAuth={isAuth} 
+      <NavigationItems
+        isAuth={isAuth}
         onLogout={onLogout}
         onNewPost={onNewPost}
         onEdit={onEdit}

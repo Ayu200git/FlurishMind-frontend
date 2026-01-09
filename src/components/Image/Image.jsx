@@ -2,13 +2,18 @@ import React from 'react';
 import './Image.css';
 
 const Image = ({ imageUrl, contain, left }) => {
-  const style = {
-    backgroundImage: `url('${imageUrl}')`,
-    backgroundSize: contain ? 'contain' : 'cover',
-    backgroundPosition: left ? 'left' : 'center'
-  };
-
-  return <div className="image" style={style} />;
+  return (
+    <img
+      src={imageUrl}
+      className="image"
+      style={{
+        objectFit: contain ? 'contain' : 'cover',
+        objectPosition: left ? 'left' : 'center',
+        background: 'transparent'
+      }}
+      alt="post"
+    />
+  );
 };
 
 export default Image;

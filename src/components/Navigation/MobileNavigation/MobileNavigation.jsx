@@ -1,9 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useViewMode } from '../../../context/ViewModeContext';
 import './MobileNavigation.css';
 
 // NavigationItems component inside this file
 const NavigationItems = ({ isAuth, onChoose, onLogout, onNewPost, onEdit }) => {
+  const { isListView, setIsListView } = useViewMode();
   const navItems = [
     { id: 'feed', text: 'Feed', link: '/', auth: true },
     { id: 'login', text: 'Login', link: '/login', auth: false },
@@ -26,13 +28,18 @@ const NavigationItems = ({ isAuth, onChoose, onLogout, onNewPost, onEdit }) => {
       {isAuth && (
         <>
           <li className="navigation-item mobile">
-            <button onClick={onNewPost}>New Post</button>
+            <button onClick={() => { setIsListView(!isListView); onChoose(); }} style={{ fontSize: '1rem' }}>
+              {isListView ? '▤ Switch to Grid View' : '☰ Switch to List View'}
+            </button>
           </li>
           <li className="navigation-item mobile">
-            <button onClick={onEdit}>Edit</button>
+            <button onClick={() => { onNewPost(); onChoose(); }}>New Post</button>
           </li>
           <li className="navigation-item mobile">
-            <button onClick={onLogout}>Logout</button>
+            <button onClick={() => { onEdit(); onChoose(); }}>Edit</button>
+          </li>
+          <li className="navigation-item mobile">
+            <button onClick={() => { onLogout(); onChoose(); }}>Logout</button>
           </li>
         </>
       )}

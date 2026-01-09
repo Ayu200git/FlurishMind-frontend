@@ -64,17 +64,26 @@
 }
 
 .post__image {
-  height: 15rem;
   width: 100%;
+  max-height: 20rem;
+  /* Limit max height but allow it to be 0 or auto if needed */
+  height: auto;
+  overflow: hidden;
+  margin-bottom: 1rem;
 }
 
 .post__actions {
-  text-align: right;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
+  gap: 1rem;
+  justify-content: flex-start;
   align-items: center;
+}
+
+.post__actions-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .post__content {
@@ -83,6 +92,12 @@
   margin: 1rem 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  /* Ensure long words break */
+  word-break: break-word;
+  /* Fallback for older browsers */
+  max-width: 100%;
+  /* Ensure it doesn't exceed container */
 }
 
 /* Tablet styles */
@@ -124,6 +139,9 @@
   .post {
     margin: 0.5rem;
     padding: 1rem;
+    width: auto;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .post__actions {
@@ -142,4 +160,39 @@
     height: 36px;
     font-size: 1rem;
   }
+}
+
+/* Like Button Styles */
+.post__like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+
+.post__like-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.post__like-btn.liked {
+  color: #ed4956;
+}
+
+.post__like-btn.liked span {
+  font-weight: bold;
+}
+
+.post__like-btn svg {
+  transition: transform 0.2s;
+}
+
+.post__like-btn:active svg {
+  transform: scale(1.2);
 }

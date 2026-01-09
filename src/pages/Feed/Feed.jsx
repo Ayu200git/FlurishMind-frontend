@@ -7,9 +7,18 @@ import Paginator from '../../components/Paginator/Paginator';
 import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import FlashMessage from '../../components/FlashMessage/FlashMessage';
+import { useViewMode } from '../../context/ViewModeContext';
 import './Feed.css';
+import '../../components/Feed/PostListItem.css';
+
+/* Helper to get Image URL similarly to Post.jsx */
+const getImageUrl = (path) => {
+  if (!path) return null;
+  return path.startsWith('http') ? path : `${import.meta.env.VITE_BACKEND_URL}/${path}`;
+};
 
 const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
+  const { isListView } = useViewMode();
   const [isEditing, setIsEditing] = useState(false);
   const [posts, setPosts] = useState([]);
   const [totalPosts, setTotalPosts] = useState(0);
@@ -53,18 +62,18 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     loadPosts();
   }, [authToken, viewOnly]);
 
-  const loadPosts = useCallback(
-    async (direction) => {
-      setPostsLoading(true);
-      let page = postPage;
-      if (direction === 'next') page++;
-      if (direction === 'previous') page--;
-      setPostPage(page);
+  const [perPage, setPerPage] = useState(5);
+  // ... other states ...
 
+  // ...
+
+  const loadPosts = useCallback(
+    async (pageToFetch = 1) => {
+      setPostsLoading(true);
       const graphqlQuery = {
         query: `
-          query FetchPosts($page: Int!) {
-            posts(page: $page) {
+          query FetchPosts($page: Int!, $limit: Int!) {
+            posts(page: $page, limit: $limit) {
               posts {
                 _id title content imageUrl
                 creator { _id name }
@@ -77,7 +86,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
             }
           }
         `,
-        variables: { page }
+        variables: { page: pageToFetch, limit: perPage }
       };
 
       try {
@@ -93,16 +102,50 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         if (resData.errors) throw new Error(resData.errors[0].message);
 
         const postsData = resData.data.posts || { posts: [], totalPosts: 0 };
-        setPosts(postsData.posts || []);
+
+        setPosts(prev => {
+          if (isListView) {
+            // List View: Standard Pagination (Replace)
+            return postsData.posts;
+          } else {
+            // Grid View: Infinite Scroll (Append)
+            if (pageToFetch === 1) return postsData.posts;
+            // Filter duplicates just in case
+            const newPosts = postsData.posts.filter(p => !prev.find(existing => existing._id === p._id));
+            return [...prev, ...newPosts];
+          }
+        });
         setTotalPosts(postsData.totalPosts || 0);
         setPostsLoading(false);
+        setPostPage(pageToFetch); // Update current page state
       } catch (err) {
         catchError(err);
         setPostsLoading(false);
       }
     },
-    [postPage, authToken]
+    [authToken, isListView, perPage]
   );
+
+  // Reload posts when perPage changes (for List View)
+  useEffect(() => {
+    if (isListView) {
+      loadPosts(1);
+    }
+  }, [perPage, isListView, loadPosts]);
+
+  // Infinite Scroll Handler - Only for Grid View
+  useEffect(() => {
+    if (isListView) return;
+
+    const handleScroll = () => {
+      const bottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight;
+      if (bottom && !postsLoading && posts.length < totalPosts) {
+        loadPosts(postPage + 1);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [postsLoading, totalPosts, posts.length, loadPosts, postPage, isListView]);
 
   const statusUpdateHandler = async (event) => {
     event.preventDefault();
@@ -151,7 +194,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         const formData = new FormData();
         formData.append('image', postData.image);
         if (editPost?.imageUrl) formData.append('oldPath', editPost.imageUrl);
-        const uploadRes = await fetch( import.meta.env.VITE_BACKEND_URL + '/post-image', {
+        const uploadRes = await fetch(import.meta.env.VITE_BACKEND_URL + '/post-image', {
           method: 'PUT',
           headers: { Authorization: 'Bearer ' + authToken },
           body: formData
@@ -163,23 +206,23 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       const isUpdate = !!editPost;
       const graphqlQuery = isUpdate
         ? {
-            query: `mutation UpdatePost($id: ID!, $title: String!, $content: String!, $imageUrl: String!) {
+          query: `mutation UpdatePost($id: ID!, $title: String!, $content: String!, $imageUrl: String!) {
               updatePost(id: $id, postInput: { title: $title, content: $content, imageUrl: $imageUrl }) {
                 _id title content imageUrl creator { _id name } likes { _id } likesCount
                 comments { _id content creator { _id name } createdAt } commentsCount createdAt
               }
             }`,
-            variables: { id: editPost._id, title: postData.title, content: postData.content, imageUrl }
-          }
+          variables: { id: editPost._id, title: postData.title, content: postData.content, imageUrl }
+        }
         : {
-            query: `mutation CreatePost($title: String!, $content: String!, $imageUrl: String!) {
+          query: `mutation CreatePost($title: String!, $content: String!, $imageUrl: String!) {
               createPost(postInput: { title: $title, content: $content, imageUrl: $imageUrl }) {
                 _id title content imageUrl creator { _id name } likes { _id } likesCount
                 comments { _id content creator { _id name } createdAt } commentsCount createdAt
               }
             }`,
-            variables: { title: postData.title, content: postData.content, imageUrl }
-          };
+          variables: { title: postData.title, content: postData.content, imageUrl }
+        };
 
       const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
@@ -271,7 +314,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     if (!authToken) return setFlashMessage({ message: 'Please login to edit comment', type: 'error' });
     try {
       const graphqlQuery = { query: `mutation UpdateComment($commentId: ID!, $content: String!) { updateComment(commentId: $commentId, content: $content) { _id content creator { _id name avatar } createdAt parentId } }`, variables: { commentId, content } };
-      const res = await fetch( import.meta.env.VITE_GRAPHQL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken }, body: JSON.stringify(graphqlQuery) });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
       loadPosts();
@@ -310,7 +353,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         }`,
         variables: { postId, page, limit: 5 }
       };
-      const res = await fetch( import.meta.env.VITE_GRAPHQL_URL, {
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
@@ -447,37 +490,73 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         ) : posts.length === 0 ? (
           <p style={{ textAlign: 'center' }}>No posts found.</p>
         ) : (
-          <Paginator onPrevious={() => loadPosts('previous')} onNext={() => loadPosts('next')} lastPage={Math.ceil(totalPosts / 2)} currentPage={postPage}>
-            {posts.map(post => (
-              <Post
-                key={post._id}
-                id={post._id}
-                author={post.creator?.name || 'Unknown'}
-                date={new Date(post.createdAt).toLocaleDateString('en-US')}
-                title={post.title}
-                image={post.imageUrl}
-                content={post.content}
-                onStartEdit={userId === post.creator?._id ? () => startEditPostHandler(post._id) : null}
-                onDelete={userId === post.creator?._id ? () => deletePostHandler(post._id) : null}
-                currentUserId={userId}
-                creatorId={post.creator?._id}
-                likes={post.likes || []}
-                likesCount={post.likesCount || 0}
-                comments={post.comments || []}
-                commentsCount={post.commentsCount || 0}
-                onLike={userId ? () => handleLike(post._id) : null}
-                onAddComment={handleAddComment}
-                onEditComment={handleEditComment}
-                onDeleteComment={handleDeleteComment}
-                onLoadMoreComments={handleLoadMoreComments}
-                onLoadMoreReplies={handleLoadMoreReplies}
-                onAddReply={handleAddReply}
-                onEditReply={handleEditReply}
-                onDeleteReply={handleDeleteReply}
-                token={authToken}
-              />
-            ))}
-          </Paginator>
+          <div className={isListView ? "feed__list-view" : "feed__list"}>
+            {isListView ? (
+              /* List View - Standard Pagination */
+              <Paginator
+                onPrevious={() => loadPosts(postPage - 1)}
+                onNext={() => loadPosts(postPage + 1)}
+                onPageChange={(page) => loadPosts(page)}
+                currentPage={postPage}
+                lastPage={Math.ceil(totalPosts / perPage)}
+                totalItems={totalPosts}
+                perPage={perPage}
+                onPerPageChange={(newLimit) => {
+                  setPerPage(newLimit);
+                  setPostPage(1); // Reset to page 1
+                }}
+              >
+                {posts.map(post => (
+                  <div key={post._id} className="post-list-item">
+                    <div className="post-list-item__user">
+                      {post.creator?.avatar ? (
+                        <img src={getImageUrl(post.creator.avatar)} alt={post.creator.name} className="post-list-item__avatar" />
+                      ) : (
+                        <div className="post-list-item__placeholder">{post.creator?.name?.[0]}</div>
+                      )}
+                      <span>{post.creator?.name}</span>
+                    </div>
+                    <span className="post-list-item__title">{post.title}</span>
+                    <div className="post-list-item__actions">
+                      <Button mode="flat" link={`/post/${post._id}`}>View</Button>
+                    </div>
+                  </div>
+                ))}
+              </Paginator>
+            ) : (
+              /* Grid View - Infinite Scroll */
+              posts.map(post => (
+                <Post
+                  key={post._id}
+                  id={post._id}
+                  author={post.creator?.name || 'Unknown'}
+                  authorImage={post.creator?.avatar}
+                  date={new Date(post.createdAt).toLocaleDateString('en-US')}
+                  title={post.title}
+                  image={post.imageUrl}
+                  content={post.content}
+                  onStartEdit={userId === post.creator?._id ? () => startEditPostHandler(post._id) : null}
+                  onDelete={userId === post.creator?._id ? () => deletePostHandler(post._id) : null}
+                  currentUserId={userId}
+                  creatorId={post.creator?._id}
+                  likes={post.likes || []}
+                  likesCount={post.likesCount || 0}
+                  comments={post.comments || []}
+                  commentsCount={post.commentsCount || 0}
+                  onLike={userId ? () => handleLike(post._id) : null}
+                  onAddComment={handleAddComment}
+                  onEditComment={handleEditComment}
+                  onDeleteComment={handleDeleteComment}
+                  onLoadMoreComments={handleLoadMoreComments}
+                  onLoadMoreReplies={handleLoadMoreReplies}
+                  onAddReply={handleAddReply}
+                  onEditReply={handleEditReply}
+                  onDeleteReply={handleDeleteReply}
+                  token={authToken}
+                />
+              ))
+            )}
+          </div>
         )}
       </section>
     </Fragment>

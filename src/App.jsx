@@ -172,8 +172,8 @@ const App = () => {
 
   const errorHandler = () => setError(null);
 
-  const newPostHandlerRef = useRef(() => {});
-  const editHandlerRef = useRef(() => {});
+  const newPostHandlerRef = useRef(() => { });
+  const editHandlerRef = useRef(() => { });
 
   const handleNewPost = useCallback(() => {
     newPostHandlerRef.current();
@@ -184,7 +184,7 @@ const App = () => {
   }, []);
 
   const adminHandler = () => {
-  navigate("/admin");
+    navigate("/admin");
   };
 
   const authRoutes = (
@@ -201,7 +201,7 @@ const App = () => {
 
     </Routes>
 
-    
+
   );
 
   const protectedRoutes = (
@@ -228,7 +228,7 @@ const App = () => {
         element={<ProfilePage token={token} currentUserId={userId} />}
       />
 
-       <Route
+      <Route
         path="/admin"
         element={<AdminDashboard token={token} currentUserId={userId} />}
       />

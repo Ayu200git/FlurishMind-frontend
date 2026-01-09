@@ -1,5 +1,7 @@
 .image {
     width: 100%;
-    height: 100%;
-    background-repeat: no-repeat;
+    height: auto;
+    /* Allow natural height */
+    display: block;
+    /* Remove inline-block spacing */
 }
