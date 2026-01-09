@@ -1,51 +1,122 @@
 .single-post {
   width: 90%;
-  margin: auto;
+  margin: 2rem auto;
   text-align: center;
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   padding: 2rem;
-  border-radius: 5px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden;
+  /* contain child floats/margins */
+}
+
+.single-post__header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .single-post h1 {
   color: var(--text-primary);
+  margin-bottom: 0.5rem;
 }
 
 .single-post h2 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--border-color);
+  font-weight: 400;
 }
 
-.single-post p {
-  color: var(--text-primary);
-  text-align: left;
-  margin-top: 1rem;
+/* Centered Body */
+.single-post__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Centers content horizontally */
+  margin-bottom: 2rem;
 }
 
 .single-post__content {
   text-align: left;
+  /* Keep text left-aligned for readability, but container is centered if we set max-width */
   line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
   margin: 1.5rem 0;
+  max-width: 100%;
+  /* Or constrain it if needed */
+  width: 100%;
 }
 
 .single-post__image {
   height: auto;
-  max-height: 30rem;
+  max-height: 35rem;
+  /* Slightly larger */
   width: 100%;
-  max-width: 100%;
+  border-radius: 4px;
+  /* Soften edges */
   margin: 1rem auto;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  background: var(--bg-primary);
+  /* placeholder bg */
 }
+
+/* Footer Actions */
+.single-post__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+  min-height: 50px;
+}
+
+.single-post__creator-actions {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+  /* Push to right */
+}
+
+.single-post__likes {
+  display: flex;
+  align-items: center;
+}
+
+.post__like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.post__like-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.post__like-btn.liked {
+  color: #ed4956;
+}
+
 
 @media (min-width: 768px) {
   .single-post {
-    width: 90%;
+    width: 80%;
     max-width: 800px;
     padding: 3rem;
   }
@@ -63,11 +134,12 @@
     font-size: 1.5rem;
   }
 
-  .single-post h2 {
-    font-size: 0.9rem;
-  }
-
   .single-post__image {
     max-height: 20rem;
+  }
+
+  .single-post__footer {
+    flex-direction: row;
+    /* Keep row for mobile too usually better */
   }
 }

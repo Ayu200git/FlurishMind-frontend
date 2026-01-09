@@ -39,7 +39,7 @@ const SinglePost = ({ token }) => {
 
       const graphqlQuery = {
         query: `
-          query FetchPostWithComments($id: ID!) {
+          query FetchPost($id: ID!) {
             post(id: $id) {
               _id
               title
@@ -50,20 +50,6 @@ const SinglePost = ({ token }) => {
               likes { _id }
               likesCount
               commentsCount
-              comments {
-                _id
-                content
-                creator { _id name avatar }
-                createdAt
-                parentId
-                replies {
-                  _id
-                  content
-                  creator { _id name avatar }
-                  createdAt
-                  parentId
-                }
-              }
             }
           }
         `,
@@ -83,7 +69,39 @@ const SinglePost = ({ token }) => {
         const resData = await res.json();
         if (resData.errors) throw new Error(resData.errors[0].message);
 
-        setPost(resData.data.post);
+        // Fetch first 5 comments
+        const commentsQuery = {
+          query: `query PaginatedComments($postId: ID!, $page: Int!, $limit: Int!) {
+              paginatedComments(postId: $postId, page: $page, limit: $limit) {
+                comments {
+                  _id content creator { _id name email avatar } createdAt parentId
+                  likes { _id } likesCount
+                  repliesCount
+                  replies {
+                    _id content creator { _id name email avatar } createdAt parentId
+                    likes { _id } likesCount
+                  }
+                }
+                totalComments hasMore
+              }
+            }`,
+          variables: { postId, page: 1, limit: 5 }
+        };
+        const commentsRes = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+          body: JSON.stringify(commentsQuery)
+        });
+        const commentsData = await commentsRes.json();
+
+        const fetchedPost = resData.data.post;
+        if (commentsData.data && commentsData.data.paginatedComments) {
+          fetchedPost.comments = commentsData.data.paginatedComments.comments;
+        } else {
+          fetchedPost.comments = [];
+        }
+
+        setPost(fetchedPost);
         setLoading(false);
       } catch (err) {
         setError(err.message || 'Failed to fetch post');
@@ -225,7 +243,18 @@ const SinglePost = ({ token }) => {
   };
 
 
-  const handleAddComment = async (postId, content) => {
+  const handleAddComment = async (content) => {
+    // Wrapper to match signature expected by Comments component if it passes just content, 
+    // but Comments component passes (content) to onAddComment.
+    // Wait, in Comments.jsx: onAddComment(newComment)
+    // in Post.jsx: handleAddComment(postId, content) -> this was mismatch?
+    // No, in SinglePost, we need to adapt.
+    // Comments component calls `onAddComment(content)`.
+    // So here:
+    handleAddCommentLogic(post._id, content);
+  };
+
+  const handleAddCommentLogic = async (postId, content) => {
     try {
       const graphqlQuery = {
         query: `
@@ -235,6 +264,11 @@ const SinglePost = ({ token }) => {
               content
               creator { _id name avatar }
               createdAt
+              parentId
+              likes { _id }
+              likesCount
+              repliesCount
+              replies { _id } 
             }
           }
         `,
@@ -270,7 +304,7 @@ const SinglePost = ({ token }) => {
         query: `
           mutation UpdateComment($commentId: ID!, $content: String!) {
             updateComment(commentId: $commentId, content: $content) {
-              _id content creator { _id name avatar } createdAt
+              _id content creator { _id name avatar } createdAt likes { _id } likesCount
             }
           }
         `,
@@ -292,7 +326,7 @@ const SinglePost = ({ token }) => {
       setPost(prev => ({
         ...prev,
         comments: prev.comments.map(c =>
-          c._id === commentId ? resData.data.updateComment : c
+          c._id === commentId ? { ...c, ...resData.data.updateComment } : c
         )
       }));
     } catch (err) {
@@ -329,13 +363,119 @@ const SinglePost = ({ token }) => {
     }
   };
 
+  // Handlers for nested comments (passed to Comments component)
+  const handleLikeComment = async (commentId, isLiked) => {
+    // Logic for liking comment
+    try {
+      const graphqlQuery = {
+        query: `mutation ${isLiked ? 'UnlikeComment' : 'LikeComment'}($commentId: ID!) {
+            ${isLiked ? 'unlikeComment' : 'likeComment'}(commentId: $commentId) { 
+                _id 
+                likes { _id name } 
+                likesCount 
+            }
+          }`,
+        variables: { commentId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      // Update local state is tricky with recursion, but Comments component might handle UI state 
+      // if we just trigger re-fetch or if we update the post state deep?
+      // Updating deep nested state is hard.
+      // For now, simpler: user will see updated number because we update the specific comment in state?
+      // Actually Comments component uses props. 
+      // We need to update the `post` state with new comment data.
+      // Or, since CommentItem has local state for optimistic? No, it relies on props.
+
+      // We need a helper to find and update comment recursively
+      const updateCommentInTree = (comments, updatedComment) => {
+        return comments.map(c => {
+          if (c._id === updatedComment._id) {
+            return { ...c, ...updatedComment };
+          }
+          if (c.replies) {
+            return { ...c, replies: updateCommentInTree(c.replies, updatedComment) };
+          }
+          return c;
+        })
+      };
+
+      const updatedPartial = resData.data[isLiked ? 'unlikeComment' : 'likeComment'];
+      setPost(prev => ({
+        ...prev,
+        comments: updateCommentInTree(prev.comments, updatedPartial)
+      }));
+
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  const handleAddReply = async (commentId, content) => {
+    try {
+      const graphqlQuery = {
+        query: `mutation AddReply($postId: ID!, $commentId: ID!, $content: String!) {
+                  addReply(postId: $postId, commentId: $commentId, content: $content) {
+                      _id content creator { _id name avatar } createdAt parentId likes { _id } likesCount
+                  }
+              }`,
+        variables: { postId: post._id, commentId, content }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newReply = resData.data.addReply;
+
+      // Helper to add reply
+      const addReplyToTree = (comments, targetId, reply) => {
+        return comments.map(c => {
+          if (c._id === targetId) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), reply],
+              repliesCount: (c.repliesCount || 0) + 1
+            };
+          }
+          if (c.replies) {
+            return { ...c, replies: addReplyToTree(c.replies, targetId, reply) };
+          }
+          return c;
+        })
+      };
+
+      setPost(prev => ({
+        ...prev,
+        comments: addReplyToTree(prev.comments, commentId, newReply)
+      }));
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  const handleLoadMoreReplies = async (commentId, page) => {
+    // Implement if needed for SinglePost, similar to Feed
+    // For SinglePost, maybe we just fetch all? Or use same logic.
+    // Leave empty or basic implementation for now.
+  }
+
   const errorHandler = () => setError(null);
 
   /* ---------------- RENDER ---------------- */
 
   // Determine Creator status
   const isCreator = post && currentUserId && post.creator?._id === currentUserId;
-  const isLiked = post && post.likes?.some(like => like._id === currentUserId);
+  const isLikedPost = post && post.likes?.some(like => like._id === currentUserId);
   /* ✅ FIXED image url */
   const imageUrl = post?.imageUrl ? getImageUrl(post.imageUrl) : null;
 
@@ -363,7 +503,7 @@ const SinglePost = ({ token }) => {
       />
       <section className="single-post">
 
-        <header className="single-post__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <header className="single-post__header">
           <div>
             <h1>{post.title}</h1>
             <h2 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
@@ -371,21 +511,29 @@ const SinglePost = ({ token }) => {
               {new Date(post.createdAt).toLocaleDateString('en-US')}
             </h2>
           </div>
+        </header>
 
-          <div className="single-post__actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {isCreator ? (
-              <>
-                <Button mode="flat" onClick={startEditHandler}>Edit</Button>
-                <Button mode="flat" design="danger" onClick={deletePostHandler}>Delete</Button>
-              </>
-            ) : (
+        {imageUrl && imageUrl !== 'https://via.placeholder.com/150' && (
+          <div className="single-post__image">
+            <Image contain imageUrl={imageUrl} />
+          </div>
+        )}
+
+        {/* Centered Content */}
+        <div className="single-post__body">
+          <p className="single-post__content">{post.content}</p>
+        </div>
+
+        {/* Footer with Actions */}
+        <div className="single-post__footer">
+          <div className="single-post__likes">
+            {!isCreator && (
               <button
                 onClick={handleLike}
-                className={isLiked ? "post__like-btn liked" : "post__like-btn"}
-                title={isLiked ? "Unlike" : "Like"}
-                style={{ border: '1px solid var(--accent-color)' }}
+                className={isLikedPost ? "post__like-btn liked" : "post__like-btn"}
+                title={isLikedPost ? "Unlike" : "Like"}
               >
-                {isLiked ? (
+                {isLikedPost ? (
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" color="#ed4956">
                     <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                   </svg>
@@ -398,24 +546,28 @@ const SinglePost = ({ token }) => {
               </button>
             )}
           </div>
-        </header>
 
-        {imageUrl && imageUrl !== 'https://via.placeholder.com/150' && (
-          <div className="single-post__image">
-            <Image contain imageUrl={imageUrl} />
-          </div>
-        )}
-
-        <p className="single-post__content" style={{ whiteSpace: 'pre-wrap', marginTop: '1rem' }}>{post.content}</p>
+          {isCreator && (
+            <div className="single-post__creator-actions">
+              <Button mode="flat" onClick={startEditHandler}>Edit</Button>
+              <Button mode="flat" design="danger" onClick={deletePostHandler}>Delete</Button>
+            </div>
+          )}
+        </div>
 
         <Comments
           comments={post.comments || []}
+          commentsCount={post.commentsCount}
           postId={postId}
           currentUserId={currentUserId}
           token={authToken}
           onAddComment={handleAddComment}
           onEditComment={handleEditComment}
           onDeleteComment={handleDeleteComment}
+          onLikeComment={handleLikeComment}
+          onAddReply={handleAddReply}
+          onLoadMoreReplies={handleLoadMoreReplies}
+          show={true}
         />
       </section>
     </>

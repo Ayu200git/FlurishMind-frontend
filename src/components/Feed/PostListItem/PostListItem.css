@@ -1,9 +1,12 @@
+.post-list-wrap {
+  margin-bottom: 0.5rem;
+}
+
 .post-list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  margin-bottom: 0.5rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 5px;
@@ -64,4 +67,5 @@
 .post-list-item__actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }

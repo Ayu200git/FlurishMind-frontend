@@ -37,6 +37,7 @@ const Post = ({
   onAddReply,
   onEditReply,
   onDeleteReply,
+  onLikeComment,
   token
 }) => {
   const isCreator =
@@ -141,6 +142,7 @@ const Post = ({
           onAddReply={onAddReply}
           onEditReply={onEditReply}
           onDeleteReply={onDeleteReply}
+          onLikeComment={onLikeComment}
           show={showComments}
         />
       )}

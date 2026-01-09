@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import Button from '../Button/Button';
 import Input from '../Form/Input/Input';
 import './Comments.css';
 
-const COMMENTS_PER_PAGE = 5;
-const REPLIES_PER_PAGE = 5;
-
-/* ✅ helper to resolve image URLs */
 const getImageUrl = (path) => {
   if (!path) return null;
   return path.startsWith('http')
@@ -14,201 +10,231 @@ const getImageUrl = (path) => {
     : `${import.meta.env.VITE_BACKEND_URL}/${path}`;
 };
 
+const CommentItem = ({
+  comment,
+  currentUserId,
+  onLikeComment,
+  onAddReply,
+  onLoadMoreReplies,
+  onEditReply,
+  onDeleteReply,
+  token
+}) => {
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [repliesExpanded, setRepliesExpanded] = useState(false);
+
+  // Check if liker list contains current user. 
+  // Likes is array of objects { _id, name } populated from backend.
+  const isLiked = currentUserId && comment.likes && comment.likes.some(u => u._id?.toString() === currentUserId.toString());
+  const likesCount = comment.likesCount || (comment.likes ? comment.likes.length : 0);
+
+  const creator = comment.creator || { name: 'Unknown', avatar: null };
+  const initials = creator.name ? creator.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
+
+  const handleReplySubmit = (e) => {
+    e.preventDefault();
+    if (replyContent.trim()) {
+      onAddReply(comment._id, replyContent);
+      setReplyContent('');
+      setShowReplyInput(false);
+      setRepliesExpanded(true); // Auto expand to show new reply
+    }
+  };
+
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  // If we had totalReplies count from backend, we could show "View X more replies"
+  // For now, assuming if replies exists, we show them.
+
+  return (
+    <div className="comment-item">
+      <div className="comment">
+        <div className="comment__avatar">
+          {creator.avatar ? (
+            <img src={getImageUrl(creator.avatar)} alt={creator.name} />
+          ) : (
+            <div className="comment__avatar-placeholder">{initials}</div>
+          )}
+        </div>
+
+        <div className="comment__content">
+          <div className="comment__bubbles">
+            <span className="comment__author">{creator.name}</span>
+            <span className="comment__text">{comment.content}</span>
+          </div>
+
+          <div className="comment__actions">
+            <button
+              className={isLiked ? "comment__action-btn liked" : "comment__action-btn"}
+              onClick={() => onLikeComment && onLikeComment(comment._id, isLiked)}
+            >
+              {isLiked ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                  </svg>
+                  {likesCount || 'Like'}
+                </span>
+              ) : (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Like {likesCount > 0 && `(${likesCount})`}</span>
+              )}
+            </button>
+            <button
+              className="comment__action-btn"
+              onClick={() => setShowReplyInput(!showReplyInput)}
+            >
+              Reply
+            </button>
+            {comment.repliesCount > 0 && (
+              <button
+                className="comment__action-btn view-replies"
+                onClick={() => {
+                  setRepliesExpanded(!repliesExpanded);
+                  // If expanding and no replies loaded, or fewer than count
+                  if (!repliesExpanded && (!comment.replies || comment.replies.length < comment.repliesCount)) {
+                    onLoadMoreReplies(comment._id, 1);
+                  }
+                }}
+              >
+                {repliesExpanded ? 'Hide replies' : `View ${comment.repliesCount || ''} replies`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showReplyInput && (
+        <form className="reply-form" onSubmit={handleReplySubmit}>
+          <Input
+            id={`reply-${comment._id}`}
+            type="text"
+            placeholder={`Reply to ${creator.name}...`}
+            control="input"
+            value={replyContent}
+            onChange={(_, value) => setReplyContent(value)}
+          />
+          <Button mode="flat" type="submit" disabled={!replyContent.trim()}>
+            Send
+          </Button>
+        </form>
+      )}
+
+      {repliesExpanded && hasReplies && (
+        <div className="comment__replies">
+          {comment.replies.map(reply => (
+            <CommentItem
+              key={reply._id}
+              comment={reply}
+              currentUserId={currentUserId}
+              onLikeComment={onLikeComment}
+              onAddReply={onAddReply}
+              onLoadMoreReplies={onLoadMoreReplies}
+              onEditReply={onEditReply}
+              onDeleteReply={onDeleteReply}
+              token={token}
+            />
+          ))}
+          {/* Recursion load more logic: if length < count */}
+          {comment.replies && comment.repliesCount && comment.replies.length < comment.repliesCount && (
+            <button
+              className="load-more-replies"
+              onClick={() => onLoadMoreReplies(comment._id, Math.ceil(comment.replies.length / 5) + 1)}
+            >
+              Load more replies
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Comments = ({
-  comments = [],
-  commentsCount = 0,
+  comments,
+  commentsCount,
   postId,
   currentUserId,
   token,
   onAddComment,
   onEditComment,
   onDeleteComment,
-  onLoadMoreComments = async () => ({ comments: [], hasMore: false }),
-  onLoadMoreReplies = async () => ({ replies: [], hasMore: false }),
-  onAddReply = async () => null,
-  onEditReply = async () => null,
-  onDeleteReply = async () => null,
-  show = false
+  onLoadMoreComments,
+  onLoadMoreReplies,
+  onAddReply,
+  onEditReply,
+  onDeleteReply,
+  onLikeComment,
+  show
 }) => {
   const [newComment, setNewComment] = useState('');
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editContent, setEditContent] = useState('');
-
-  const [localComments, setLocalComments] = useState(
-    comments.map(c => ({
-      ...c,
-      replies: c.replies || [],
-      repliesPage: 1,
-      hasMoreReplies: true,
-      isLoadingReplies: false
-    }))
-  );
-
-  const [commentsPage, setCommentsPage] = useState(1);
-  const [hasMoreComments, setHasMoreComments] = useState(localComments.length < commentsCount);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-  const [replyInputMap, setReplyInputMap] = useState({});
-  const [editingReplyId, setEditingReplyId] = useState(null);
-  const [editingReplyContent, setEditingReplyContent] = useState('');
-  const [editingReplyParentId, setEditingReplyParentId] = useState(null);
-
-  /* ---------------- COMMENT ACTIONS (UNCHANGED) ---------------- */
-
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-    const addedComment = await onAddComment(postId, newComment.trim());
-    if (addedComment) {
-      setLocalComments(prev => [
-        {
-          ...addedComment,
-          replies: [],
-          repliesPage: 1,
-          hasMoreReplies: false,
-          isLoadingReplies: false
-        },
-        ...prev
-      ]);
-    }
-    setNewComment('');
-  };
-
-  const handleEditComment = async (commentId, currentContent) => {
-    if (editingCommentId === commentId) {
-      if (editContent.trim() && editContent !== currentContent) {
-        const updatedComment = await onEditComment(commentId, editContent.trim());
-        if (updatedComment) {
-          setLocalComments(prev =>
-            prev.map(c =>
-              c._id === commentId
-                ? { ...updatedComment, replies: c.replies }
-                : c
-            )
-          );
-        }
-      }
-      setEditingCommentId(null);
-      setEditContent('');
-    } else {
-      setEditingCommentId(commentId);
-      setEditContent(currentContent);
+  const handleAddCommentHandler = (event) => {
+    event.preventDefault();
+    if (newComment.trim()) {
+      onAddComment(postId, newComment); // onAddComment comes from Post which calls handleAddComment(content)
+      setNewComment('');
     }
   };
-
-  const handleDeleteComment = async (commentId) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      const deleted = await onDeleteComment(commentId);
-      if (deleted) {
-        setLocalComments(prev => prev.filter(c => c._id !== commentId));
-      }
-    }
-  };
-
-  /* ---------------- LOAD MORE HELPERS ---------------- */
 
   const loadMoreComments = async () => {
-    if (isLoadingComments || !hasMoreComments) return;
     setIsLoadingComments(true);
-    const nextPage = commentsPage + 1;
-
-    // If localComments is empty but we have commentsCount, it means we are fetching the first page really.
-    // But backend api is page based. If page 1 returns 5, and we have 0 locally.
-    // If we already have some loaded (e.g. from post preview), we need to fetch next page.
-    // BUT since we removed comment fetching from post query, localComments is likely EMPTY initially.
-    // So if localComments is empty, we should fetch page 1.
-    const pageToFetch = localComments.length === 0 ? 1 : nextPage;
-
-    const data = await onLoadMoreComments(postId, pageToFetch);
-
-    if (data.comments) {
-      setLocalComments(prev => {
-        const newComments = data.comments.filter(c => !prev.find(existing => existing._id === c._id))
-          .map(c => ({
-            ...c,
-            replies: c.replies || [],
-            repliesPage: 1,
-            hasMoreReplies: true,
-            isLoadingReplies: false
-          }));
-        // Prepend or append? Instagram appends when scrolling down, but usually "View all comments" opens a list.
-        // If we use "View more" button at top (like "View previous comments"), we prepend?
-        // Standard Instagram: "View all X comments" -> Click -> Shows more. Usually older comments are at top?
-        // Or newer comments at bottom?
-        // Let's assume standard feed style: Newest comments at bottom? No, usually Newest at top?
-        // Flurishmind backend sorts createdAt: -1 (Newest first).
-        // So page 1 = Newest 5. Page 2 = Next 5 older.
-        // If we append them, the oldest will be at bottom.
-        return [...prev, ...newComments];
-      });
-      setCommentsPage(pageToFetch);
-      setHasMoreComments(data.hasMore);
-    }
+    const nextPage = Math.ceil(comments.length / 5) + 1;
+    await onLoadMoreComments(postId, nextPage);
     setIsLoadingComments(false);
   };
-
-  /* ---------------- RENDER ---------------- */
 
   if (!show) return null;
 
   return (
     <div className="comments">
       <div className="comments__content">
-        {hasMoreComments && (
-          <button className="comments__load-more" onClick={loadMoreComments} disabled={isLoadingComments}>
+        { /* Load Previous / More Comments Logic (Instagram styles puts load more at top usually, but simple list is fine) */}
+        <div className="comments__list">
+          {comments.map(comment => (
+            <CommentItem
+              key={comment._id}
+              comment={comment}
+              currentUserId={currentUserId}
+              onLikeComment={onLikeComment}
+              onAddReply={onAddReply}
+              onLoadMoreReplies={onLoadMoreReplies}
+              onEditReply={onEditReply}
+              onDeleteReply={onDeleteReply}
+              token={token}
+            />
+          ))}
+        </div>
+
+        {/* Load More Comments (Bottom) */}
+        {comments.length < commentsCount && (
+          <button
+            className="comments__load-more"
+            onClick={loadMoreComments}
+            disabled={isLoadingComments}
+            style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}
+          >
             {isLoadingComments ? 'Loading...' : `View more comments`}
           </button>
         )}
 
         {token && (
-          <form className="comments__form" onSubmit={handleAddComment}>
-            <Input
-              id="new-comment"
-              placeholder="Write a comment..."
-              control="input"
-              value={newComment}
-              onChange={(id, value) => setNewComment(value)}
-            />
+          <form className="comments__form" onSubmit={handleAddCommentHandler}>
+            <div style={{ flex: 1 }}>
+              <Input
+                id="new-comment"
+                placeholder="Add a comment..."
+                control="input"
+                value={newComment}
+                onChange={(_, value) => setNewComment(value)}
+              />
+            </div>
             <Button mode="flat" type="submit" disabled={!newComment.trim()}>
-              Post Comment
+              Post
             </Button>
           </form>
         )}
-
-        <div className="comments__list">
-          {localComments.map(comment => {
-            const creator = comment.creator || { name: 'Unknown', avatar: null };
-            const initials = creator.name
-              .split(' ')
-              .map(n => n[0])
-              .join('')
-              .toUpperCase();
-
-            return (
-              <div key={comment._id} className="comment">
-                <div className="comment__avatar">
-                  {creator.avatar ? (
-                    <img
-                      src={getImageUrl(creator.avatar)}
-                      alt={creator.name}
-                    />
-                  ) : (
-                    <div className="comment__avatar-placeholder">
-                      {initials}
-                    </div>
-                  )}
-                </div>
-
-                <div className="comment__content">
-                  <span className="comment__author">{creator.name}</span>
-                  <span className="comment__text">{comment.content}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
-
     </div>
   );
 };

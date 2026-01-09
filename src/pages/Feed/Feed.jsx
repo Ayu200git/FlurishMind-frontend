@@ -9,7 +9,7 @@ import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import FlashMessage from '../../components/FlashMessage/FlashMessage';
 import { useViewMode } from '../../context/ViewModeContext';
 import './Feed.css';
-import '../../components/Feed/PostListItem.css';
+import PostListItem from '../../components/Feed/PostListItem/PostListItem';
 
 /* Helper to get Image URL similarly to Post.jsx */
 const getImageUrl = (path) => {
@@ -79,7 +79,15 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                 creator { _id name }
                 likes { _id }
                 likesCount commentsCount
-                comments { _id content creator { _id name avatar } createdAt parentId replies { _id } }
+                comments {
+                  _id content creator { _id name avatar } createdAt parentId
+                  likes { _id } likesCount
+                  repliesCount
+                  replies {
+                    _id content creator { _id name avatar } createdAt parentId
+                    likes { _id } likesCount
+                  }
+                }
                 createdAt
               }
               totalPosts
@@ -346,7 +354,12 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
           paginatedComments(postId: $postId, page: $page, limit: $limit) {
             comments {
               _id content creator { _id name email avatar } createdAt parentId
-              replies { _id content creator { _id name email avatar } createdAt }
+              likes { _id } likesCount
+              repliesCount
+              replies {
+                _id content creator { _id name email avatar } createdAt parentId
+                likes { _id } likesCount
+              }
             }
             totalComments hasMore
           }
@@ -360,7 +373,25 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
-      return resData.data.paginatedComments || { comments: [], hasMore: false };
+
+      const data = resData.data.paginatedComments;
+
+      setPosts(prevPosts => {
+        const postIndex = prevPosts.findIndex(p => p._id === postId);
+        if (postIndex === -1) return prevPosts;
+
+        const updatedPost = { ...prevPosts[postIndex] };
+        const oldComments = updatedPost.comments || [];
+        const newComments = data.comments.filter(nc => !oldComments.find(oc => oc._id === nc._id));
+
+        updatedPost.comments = [...oldComments, ...newComments];
+
+        const updatedPosts = [...prevPosts];
+        updatedPosts[postIndex] = updatedPost;
+        return updatedPosts;
+      });
+
+      return data || { comments: [], hasMore: false };
     } catch (err) {
       setFlashMessage({ message: err.message || 'Failed to load more comments', type: 'error' });
       return { comments: [], hasMore: false };
@@ -375,6 +406,8 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
           paginatedReplies(commentId: $commentId, page: $page, limit: $limit) {
             replies {
               _id content creator { _id name email avatar } createdAt
+              likes { _id } likesCount
+              repliesCount
             }
             totalReplies hasMore
           }
@@ -388,6 +421,37 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       });
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newReplies = resData.data.paginatedReplies.replies;
+
+      // Helper to recursively find and update comment
+      const updateCommentRecursive = (comments) => {
+        return comments.map(c => {
+          if (c._id === commentId) {
+            // Found target, append replies
+            const oldReplies = c.replies || [];
+            const uniqueNewReplies = newReplies.filter(nr => !oldReplies.find(or => or._id === nr._id));
+            return { ...c, replies: [...oldReplies, ...uniqueNewReplies] };
+          }
+          if (c.replies && c.replies.length > 0) {
+            return { ...c, replies: updateCommentRecursive(c.replies) };
+          }
+          return c;
+        });
+      };
+
+      setPosts(prevPosts => {
+        return prevPosts.map(p => {
+          // Optimization: only search if post has comments? 
+          // Since we don't know which post the comment belongs to easily (without passing postId), 
+          // we might have to search all. But usually usage implies we know.
+          // Ideally handleLoadMoreReplies should accept postId for optimization.
+          // For now, search all active posts (usually only few loaded).
+          if (!p.comments) return p;
+          return { ...p, comments: updateCommentRecursive(p.comments) };
+        });
+      });
+
       return resData.data.paginatedReplies || { replies: [], hasMore: false };
     } catch (err) {
       setFlashMessage({ message: err.message || 'Failed to load more replies', type: 'error' });
@@ -443,6 +507,32 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       return resData.data.updateComment;
     } catch (err) {
       setFlashMessage({ message: err.message || 'Failed to update reply', type: 'error' });
+      return null;
+    }
+  };
+
+  const handleLikeComment = async (commentId, isLiked) => {
+    if (!authToken) return setFlashMessage({ message: 'Please login to like comment', type: 'error' });
+    try {
+      const mutation = isLiked ? 'unlikeComment' : 'likeComment';
+      const graphqlQuery = {
+        query: `mutation ${isLiked ? 'UnlikeComment' : 'LikeComment'}($commentId: ID!) {
+          ${mutation}(commentId: $commentId) {
+            _id likes { _id } likesCount
+          }
+        }`,
+        variables: { commentId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+      return resData.data[mutation];
+    } catch (err) {
+      setFlashMessage({ message: err.message || 'Failed to like comment', type: 'error' });
       return null;
     }
   };
@@ -507,20 +597,22 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                 }}
               >
                 {posts.map(post => (
-                  <div key={post._id} className="post-list-item">
-                    <div className="post-list-item__user">
-                      {post.creator?.avatar ? (
-                        <img src={getImageUrl(post.creator.avatar)} alt={post.creator.name} className="post-list-item__avatar" />
-                      ) : (
-                        <div className="post-list-item__placeholder">{post.creator?.name?.[0]}</div>
-                      )}
-                      <span>{post.creator?.name}</span>
-                    </div>
-                    <span className="post-list-item__title">{post.title}</span>
-                    <div className="post-list-item__actions">
-                      <Button mode="flat" link={`/post/${post._id}`}>View</Button>
-                    </div>
-                  </div>
+                  <PostListItem
+                    key={post._id}
+                    post={post}
+                    onLike={userId ? handleLike : null}
+                    token={authToken}
+                    currentUserId={userId}
+                    onAddComment={handleAddComment}
+                    onEditComment={handleEditComment}
+                    onDeleteComment={handleDeleteComment}
+                    onLoadMoreComments={handleLoadMoreComments}
+                    onLoadMoreReplies={handleLoadMoreReplies}
+                    onAddReply={handleAddReply}
+                    onEditReply={handleEditReply}
+                    onDeleteReply={handleDeleteReply}
+                    onLikeComment={handleLikeComment}
+                  />
                 ))}
               </Paginator>
             ) : (
@@ -552,6 +644,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                   onAddReply={handleAddReply}
                   onEditReply={handleEditReply}
                   onDeleteReply={handleDeleteReply}
+                  onLikeComment={handleLikeComment}
                   token={authToken}
                 />
               ))
