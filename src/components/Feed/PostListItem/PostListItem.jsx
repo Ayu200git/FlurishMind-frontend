@@ -145,7 +145,7 @@ const PostListItem = ({
               onEditReply={onEditReply}
               onDeleteReply={onDeleteReply}
               onLikeComment={onLikeComment}
-              show={true}
+              show={showComments}
             />
           </div>
         )

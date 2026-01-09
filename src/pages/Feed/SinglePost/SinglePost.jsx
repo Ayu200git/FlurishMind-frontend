@@ -80,6 +80,8 @@ const SinglePost = ({ token }) => {
                   replies {
                     _id content creator { _id name email avatar } createdAt parentId
                     likes { _id } likesCount
+                    repliesCount
+                    replies { _id }
                   }
                 }
                 totalComments hasMore
@@ -243,61 +245,190 @@ const SinglePost = ({ token }) => {
   };
 
 
-  const handleAddComment = async (content) => {
-    // Wrapper to match signature expected by Comments component if it passes just content, 
-    // but Comments component passes (content) to onAddComment.
-    // Wait, in Comments.jsx: onAddComment(newComment)
-    // in Post.jsx: handleAddComment(postId, content) -> this was mismatch?
-    // No, in SinglePost, we need to adapt.
-    // Comments component calls `onAddComment(content)`.
-    // So here:
-    handleAddCommentLogic(post._id, content);
+  const handleAddComment = async (postId, content) => {
+    handleAddCommentLogic(postId, content);
   };
 
-  const handleAddCommentLogic = async (postId, content) => {
+  const handleLoadMoreComments = async (postId, page) => {
+    if (!authToken) return { comments: [], hasMore: false };
     try {
       const graphqlQuery = {
-        query: `
-          mutation AddComment($content: String!, $postId: ID!) {
-            addComment(commentInput: { content: $content, postId: $postId }) {
-              _id
-              content
-              creator { _id name avatar }
-              createdAt
-              parentId
-              likes { _id }
-              likesCount
+        query: `query PaginatedComments($postId: ID!, $page: Int!, $limit: Int!) {
+          paginatedComments(postId: $postId, page: $page, limit: $limit) {
+            comments {
+              _id content creator { _id name email avatar } createdAt parentId
+              likes { _id } likesCount
               repliesCount
-              replies { _id } 
+              replies {
+                _id content creator { _id name email avatar } createdAt parentId
+                likes { _id } likesCount
+                repliesCount
+                replies { _id }
+              }
             }
+            totalComments hasMore
           }
-        `,
-        variables: { content, postId }
+        }`,
+        variables: { postId, page, limit: 5 }
       };
-
       const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + authToken
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
       });
-
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
 
-      const newComment = resData.data.addComment;
-      setPost(prev => ({
-        ...prev,
-        comments: [newComment, ...(prev.comments || [])],
-        commentsCount: (prev.commentsCount || 0) + 1
-      }));
+      const data = resData.data.paginatedComments;
+
+      setPost(prevPost => {
+        const oldComments = prevPost.comments || [];
+        const newComments = data.comments.filter(nc => !oldComments.find(oc => oc._id === nc._id));
+        return { ...prevPost, comments: [...oldComments, ...newComments] };
+      });
+
+      return data || { comments: [], hasMore: false };
     } catch (err) {
-      setError(err.message || 'Failed to add comment');
+      setError(err.message || 'Failed to load more comments');
+      return { comments: [], hasMore: false };
     }
   };
 
+  const handleLoadMoreReplies = async (commentId, page) => {
+    if (!authToken) return { replies: [], hasMore: false };
+    try {
+      const graphqlQuery = {
+        query: `query PaginatedReplies($commentId: ID!, $page: Int!, $limit: Int!) {
+          paginatedReplies(commentId: $commentId, page: $page, limit: $limit) {
+            replies {
+              _id content creator { _id name email avatar } createdAt
+              repliesCount
+              replies { _id }
+            }
+            totalReplies hasMore
+          }
+        }`,
+        variables: { commentId, page, limit: 5 }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newReplies = resData.data.paginatedReplies.replies;
+
+      // Helper to recursively find and update comment
+      const updateCommentRecursive = (comments) => {
+        return comments.map(c => {
+          if (c._id === commentId) {
+            // Found target, append replies
+            const oldReplies = c.replies || [];
+            const uniqueNewReplies = newReplies.filter(nr => !oldReplies.find(or => or._id === nr._id));
+            return { ...c, replies: [...oldReplies, ...uniqueNewReplies] };
+          }
+          if (c.replies && c.replies.length > 0) {
+            return { ...c, replies: updateCommentRecursive(c.replies) };
+          }
+          return c;
+        });
+      };
+
+      setPost(prevPost => {
+        if (!prevPost.comments) return prevPost;
+        return { ...prevPost, comments: updateCommentRecursive(prevPost.comments) };
+      });
+
+      return resData.data.paginatedReplies || { replies: [], hasMore: false };
+    } catch (err) {
+      setError(err.message || 'Failed to load more replies');
+      return { replies: [], hasMore: false };
+    }
+  };
+
+
+
+  // Helper for recursive updates
+  const updateCommentsState = (comments, targetId, updateFn) => {
+    return comments.map(c => {
+      if (c._id === targetId) {
+        return updateFn(c);
+      }
+      if (c.replies && c.replies.length > 0) {
+        return { ...c, replies: updateCommentsState(c.replies, targetId, updateFn) };
+      }
+      return c;
+    });
+  };
+
+  const handleLikeComment = async (commentId, isLiked) => {
+    if (!authToken) return setError('Please login to like comment');
+    try {
+      const mutation = isLiked ? 'unlikeComment' : 'likeComment';
+      const graphqlQuery = {
+        query: `mutation ${isLiked ? 'UnlikeComment' : 'LikeComment'}($commentId: ID!) {
+          ${mutation}(commentId: $commentId) {
+            _id likes { _id } likesCount
+          }
+        }`,
+        variables: { commentId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const updatedData = resData.data[mutation];
+      setPost(prev => ({
+        ...prev,
+        comments: updateCommentsState(prev.comments || [], commentId, (c) => ({ ...c, ...updatedData }))
+      }));
+    } catch (err) {
+      setError(err.message || 'Failed to like comment');
+    }
+  };
+
+  const handleAddReply = async (commentId, content) => {
+    if (!authToken) return setError('Please login to reply');
+    try {
+      const graphqlQuery = {
+        query: `mutation AddComment($content: String!, $postId: ID!, $parentId: ID!) {
+          addComment(commentInput: { content: $content, postId: $postId, parentId: $parentId }) {
+            _id content creator { _id name email avatar } createdAt parentId likes { _id } likesCount
+            replies { _id } repliesCount
+          }
+        }`,
+        variables: { content, postId: post._id, parentId: commentId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newReply = resData.data.addComment;
+      setPost(prev => ({
+        ...prev,
+        comments: updateCommentsState(prev.comments || [], commentId, (c) => ({
+          ...c,
+          replies: [newReply, ...(c.replies || [])],
+          repliesCount: (c.repliesCount || 0) + 1
+        }))
+      }));
+    } catch (err) {
+      setError(err.message || 'Failed to add reply');
+    }
+  };
+
+
+  /* Old non-recursive handlers replaced/merged */
   const handleEditComment = async (commentId, content) => {
     try {
       const graphqlQuery = {
@@ -340,42 +471,33 @@ const SinglePost = ({ token }) => {
         query: `mutation DeleteComment($commentId: ID!) { deleteComment(commentId: $commentId) }`,
         variables: { commentId }
       };
-
       const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + authToken
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
         body: JSON.stringify(graphqlQuery)
       });
-
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
 
       setPost(prev => ({
         ...prev,
         comments: prev.comments.filter(c => c._id !== commentId),
-        commentsCount: Math.max((prev.commentsCount || 1) - 1, 0)
+        commentsCount: (prev.commentsCount || 1) - 1
       }));
     } catch (err) {
       setError(err.message || 'Failed to delete comment');
     }
   };
 
-  // Handlers for nested comments (passed to Comments component)
-  const handleLikeComment = async (commentId, isLiked) => {
-    // Logic for liking comment
+  const handleEditReply = async (replyId, content) => {
     try {
       const graphqlQuery = {
-        query: `mutation ${isLiked ? 'UnlikeComment' : 'LikeComment'}($commentId: ID!) {
-            ${isLiked ? 'unlikeComment' : 'likeComment'}(commentId: $commentId) { 
-                _id 
-                likes { _id name } 
-                likesCount 
+        query: `mutation UpdateComment($commentId: ID!, $content: String!) {
+            updateComment(commentId: $commentId, content: $content) {
+              _id content creator { _id name avatar } createdAt likes { _id } likesCount
             }
           }`,
-        variables: { commentId }
+        variables: { commentId: replyId, content }
       };
       const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
@@ -385,47 +507,21 @@ const SinglePost = ({ token }) => {
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
 
-      // Update local state is tricky with recursion, but Comments component might handle UI state 
-      // if we just trigger re-fetch or if we update the post state deep?
-      // Updating deep nested state is hard.
-      // For now, simpler: user will see updated number because we update the specific comment in state?
-      // Actually Comments component uses props. 
-      // We need to update the `post` state with new comment data.
-      // Or, since CommentItem has local state for optimistic? No, it relies on props.
-
-      // We need a helper to find and update comment recursively
-      const updateCommentInTree = (comments, updatedComment) => {
-        return comments.map(c => {
-          if (c._id === updatedComment._id) {
-            return { ...c, ...updatedComment };
-          }
-          if (c.replies) {
-            return { ...c, replies: updateCommentInTree(c.replies, updatedComment) };
-          }
-          return c;
-        })
-      };
-
-      const updatedPartial = resData.data[isLiked ? 'unlikeComment' : 'likeComment'];
+      const updated = resData.data.updateComment;
       setPost(prev => ({
         ...prev,
-        comments: updateCommentInTree(prev.comments, updatedPartial)
+        comments: updateCommentsState(prev.comments || [], replyId, (c) => ({ ...c, ...updated }))
       }));
-
     } catch (err) {
-      console.log(err);
+      setError(err.message || 'Failed to edit reply');
     }
-  }
+  };
 
-  const handleAddReply = async (commentId, content) => {
+  const handleDeleteReply = async (replyId) => {
     try {
       const graphqlQuery = {
-        query: `mutation AddReply($postId: ID!, $commentId: ID!, $content: String!) {
-                  addReply(postId: $postId, commentId: $commentId, content: $content) {
-                      _id content creator { _id name avatar } createdAt parentId likes { _id } likesCount
-                  }
-              }`,
-        variables: { postId: post._id, commentId, content }
+        query: `mutation DeleteComment($commentId: ID!) { deleteComment(commentId: $commentId) }`,
+        variables: { commentId: replyId }
       };
       const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
         method: 'POST',
@@ -435,39 +531,31 @@ const SinglePost = ({ token }) => {
       const resData = await res.json();
       if (resData.errors) throw new Error(resData.errors[0].message);
 
-      const newReply = resData.data.addReply;
-
-      // Helper to add reply
-      const addReplyToTree = (comments, targetId, reply) => {
+      // Recursive remove
+      const removeReplyRecursive = (comments) => {
         return comments.map(c => {
-          if (c._id === targetId) {
+          if (c.replies && c.replies.some(r => r._id === replyId)) {
             return {
               ...c,
-              replies: [...(c.replies || []), reply],
-              repliesCount: (c.repliesCount || 0) + 1
+              replies: c.replies.filter(r => r._id !== replyId),
+              repliesCount: (c.repliesCount || 1) - 1
             };
           }
-          if (c.replies) {
-            return { ...c, replies: addReplyToTree(c.replies, targetId, reply) };
+          if (c.replies && c.replies.length > 0) {
+            return { ...c, replies: removeReplyRecursive(c.replies) };
           }
           return c;
-        })
+        });
       };
 
       setPost(prev => ({
         ...prev,
-        comments: addReplyToTree(prev.comments, commentId, newReply)
+        comments: removeReplyRecursive(prev.comments || [])
       }));
     } catch (err) {
-      console.log(err);
+      setError(err.message || 'Failed to delete reply');
     }
-  }
-
-  const handleLoadMoreReplies = async (commentId, page) => {
-    // Implement if needed for SinglePost, similar to Feed
-    // For SinglePost, maybe we just fetch all? Or use same logic.
-    // Leave empty or basic implementation for now.
-  }
+  };
 
   const errorHandler = () => setError(null);
 
@@ -566,6 +654,9 @@ const SinglePost = ({ token }) => {
           onDeleteComment={handleDeleteComment}
           onLikeComment={handleLikeComment}
           onAddReply={handleAddReply}
+          onEditReply={handleEditReply}
+          onDeleteReply={handleDeleteReply}
+          onLoadMoreComments={handleLoadMoreComments}
           onLoadMoreReplies={handleLoadMoreReplies}
           show={true}
         />

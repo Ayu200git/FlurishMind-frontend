@@ -18,11 +18,23 @@ const CommentItem = ({
   onLoadMoreReplies,
   onEditReply,
   onDeleteReply,
+  onEdit,     // Generic handler for this item (could be comment or reply)
+  onDelete,   // Generic handler
   token
 }) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [repliesExpanded, setRepliesExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+
+  const isAuthor = currentUserId && comment.creator && comment.creator._id === currentUserId;
+
+  const handleEditSubmit = () => {
+    if (editedContent.trim() && onEdit) {
+      onEdit(comment._id, editedContent);
+    }
+  };
 
   // Check if liker list contains current user. 
   // Likes is array of objects { _id, name } populated from backend.
@@ -46,6 +58,8 @@ const CommentItem = ({
   // If we had totalReplies count from backend, we could show "View X more replies"
   // For now, assuming if replies exists, we show them.
 
+  // For now, assuming if replies exists, we show them.
+
   return (
     <div className="comment-item">
       <div className="comment">
@@ -60,37 +74,79 @@ const CommentItem = ({
         <div className="comment__content">
           <div className="comment__bubbles">
             <span className="comment__author">{creator.name}</span>
-            <span className="comment__text">{comment.content}</span>
+            {isEditing ? (
+              <div className="comment__edit-layout">
+                <Input
+                  id={`edit-${comment._id}`}
+                  type="text"
+                  control="input"
+                  value={editedContent}
+                  onChange={(_, Val) => setEditedContent(Val)}
+                />
+                <div className="comment__edit-actions">
+                  <button className="comment__action-btn" onClick={() => {
+                    handleEditSubmit();
+                    setIsEditing(false);
+                  }}>Save</button>
+                  <button className="comment__action-btn" onClick={() => setIsEditing(false)}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <span className="comment__text">{comment.content}</span>
+            )}
           </div>
 
           <div className="comment__actions">
-            <button
-              className={isLiked ? "comment__action-btn liked" : "comment__action-btn"}
-              onClick={() => onLikeComment && onLikeComment(comment._id, isLiked)}
-            >
-              {isLiked ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                  </svg>
-                  {likesCount || 'Like'}
-                </span>
-              ) : (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Like {likesCount > 0 && `(${likesCount})`}</span>
-              )}
-            </button>
-            <button
-              className="comment__action-btn"
-              onClick={() => setShowReplyInput(!showReplyInput)}
-            >
-              Reply
-            </button>
+            {!isEditing && (
+              <>
+                <button
+                  className={isLiked ? "comment__action-btn liked" : "comment__action-btn"}
+                  onClick={() => onLikeComment && onLikeComment(comment._id, isLiked)}
+                >
+                  {isLiked ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                      </svg>
+                      {likesCount || 'Like'}
+                    </span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Like {likesCount > 0 && `(${likesCount})`}</span>
+                  )}
+                </button>
+                <button
+                  className="comment__action-btn"
+                  onClick={() => setShowReplyInput(!showReplyInput)}
+                >
+                  Reply
+                </button>
+                {/* Author Actions */}
+                {isAuthor && (
+                  <>
+                    <button className="comment__action-btn" onClick={() => {
+                      setIsEditing(true);
+                      setEditedContent(comment.content);
+                    }}>Edit</button>
+                    <button className="comment__action-btn" onClick={() => {
+                      // Check if it's a top level or reply to decide which handler ?? 
+                      // Actually Comments parent passes onEditReply/onDeleteReply for REPLIES.
+                      // But for top level it passes onEditComment/onDeleteComment.
+                      // BUT CommentItem receives specific props. 
+                      // Wait, CommentItem is recursive. 
+                      // We need to clarify props flow.
+                      // Let's assume onUpdate / onDelete generic props specific to the level passed from parent.
+                      onDelete(comment._id);
+                    }}>Delete</button>
+                  </>
+                )}
+              </>
+            )}
+
             {comment.repliesCount > 0 && (
               <button
                 className="comment__action-btn view-replies"
                 onClick={() => {
                   setRepliesExpanded(!repliesExpanded);
-                  // If expanding and no replies loaded, or fewer than count
                   if (!repliesExpanded && (!comment.replies || comment.replies.length < comment.repliesCount)) {
                     onLoadMoreReplies(comment._id, 1);
                   }
@@ -101,7 +157,7 @@ const CommentItem = ({
             )}
           </div>
         </div>
-      </div>
+      </div >
 
       {showReplyInput && (
         <form className="reply-form" onSubmit={handleReplySubmit}>
@@ -119,32 +175,35 @@ const CommentItem = ({
         </form>
       )}
 
-      {repliesExpanded && hasReplies && (
-        <div className="comment__replies">
-          {comment.replies.map(reply => (
-            <CommentItem
-              key={reply._id}
-              comment={reply}
-              currentUserId={currentUserId}
-              onLikeComment={onLikeComment}
-              onAddReply={onAddReply}
-              onLoadMoreReplies={onLoadMoreReplies}
-              onEditReply={onEditReply}
-              onDeleteReply={onDeleteReply}
-              token={token}
-            />
-          ))}
-          {/* Recursion load more logic: if length < count */}
-          {comment.replies && comment.repliesCount && comment.replies.length < comment.repliesCount && (
-            <button
-              className="load-more-replies"
-              onClick={() => onLoadMoreReplies(comment._id, Math.ceil(comment.replies.length / 5) + 1)}
-            >
-              Load more replies
-            </button>
-          )}
-        </div>
-      )}
+      {
+        repliesExpanded && hasReplies && (
+          <div className="comment__replies">
+            {comment.replies.map(reply => (
+              <CommentItem
+                key={reply._id}
+                comment={reply}
+                currentUserId={currentUserId}
+                onLikeComment={onLikeComment}
+                onAddReply={onAddReply}
+                onLoadMoreReplies={onLoadMoreReplies}
+                // Nested items are always replies
+                onEdit={onEditReply}
+                onDelete={onDeleteReply}
+                onEditReply={onEditReply}
+                onDeleteReply={onDeleteReply}
+                token={token}
+              />
+            ))}
+            {comment.replies && comment.repliesCount && comment.replies.length < comment.repliesCount && (
+              <button
+                className="load-more-replies"
+                onClick={() => onLoadMoreReplies(comment._id, Math.ceil(comment.replies.length / 5) + 1)}
+              >
+                Load more replies
+              </button>
+            )}
+          </div>
+        )}
     </div>
   );
 };
@@ -172,7 +231,7 @@ const Comments = ({
   const handleAddCommentHandler = (event) => {
     event.preventDefault();
     if (newComment.trim()) {
-      onAddComment(postId, newComment); // onAddComment comes from Post which calls handleAddComment(content)
+      onAddComment(postId, newComment);
       setNewComment('');
     }
   };
@@ -201,6 +260,8 @@ const Comments = ({
               onLoadMoreReplies={onLoadMoreReplies}
               onEditReply={onEditReply}
               onDeleteReply={onDeleteReply}
+              onEdit={onEditComment}
+              onDelete={onDeleteComment}
               token={token}
             />
           ))}

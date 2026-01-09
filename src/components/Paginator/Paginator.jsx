@@ -20,26 +20,6 @@ const Paginator = ({ children, currentPage, lastPage, onPrevious, onNext, onPage
 
   return (
     <div className="paginator-container">
-      {/* Top Controls: Per Page dropdown */}
-      <div className="paginator__top-bar">
-        <label>
-          Show
-          <select
-            value={perPage}
-            onChange={(e) => onPerPageChange(Number(e.target.value))}
-            className="paginator__select"
-          >
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-            <option value="25">25</option>
-            <option value="30">30</option>
-          </select>
-          entries
-        </label>
-      </div>
-
       {/* Content */}
       <div className="paginator__content">
         {children}
@@ -48,10 +28,27 @@ const Paginator = ({ children, currentPage, lastPage, onPrevious, onNext, onPage
       {/* Bottom Controls: Summary + Pagination Buttons */}
       <div className="paginator__bottom-bar">
         <div className="paginator__summary">
-          Showing {startEntry} to {endEntry} of {totalItems} entries
+          Showing {startEntry} to {endEntry} of {totalItems} Posts
         </div>
 
         <div className="paginator__controls">
+          <label className="paginator__show-label">
+            Show
+            <select
+              value={perPage}
+              onChange={(e) => onPerPageChange(Number(e.target.value))}
+              className="paginator__select"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+              <option value="25">25</option>
+              <option value="30">30</option>
+            </select>
+            Posts
+          </label>
+
           <button
             className="paginator__control"
             onClick={onPrevious}
