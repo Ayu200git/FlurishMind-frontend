@@ -1,261 +1,156 @@
 .single-post {
-  width: 90%;
+  width: 100%;
   max-width: 600px;
-  margin: 2rem auto;
+  /* Standard feed width */
+  margin: 1.5rem auto;
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   padding: 0;
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* Consistent with Feed */
   border: 1px solid var(--border-color);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* Header */
 .single-post__header {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.single-post h1 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.single-post h2 {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-  margin-top: 2px;
-}
-
-/* Centered Body */
-.single-post__body {
-  padding: 1rem;
+.single-post__user {
   display: flex;
-  flex-direction: column;
-  /* align-items: center; Remove alignment to let text flow naturally but center container if needed */
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.single-post__content {
-  text-align: left;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0.5rem 0;
-  width: 100%;
-  font-size: 0.95rem;
+.single-post__user-avatar img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
 }
 
+.single-post__user-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.single-post__author {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.single-post__creator-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Image */
 .single-post__image {
   width: 100%;
-  max-height: 500px;
-  overflow: hidden;
+  margin: 0;
+  background: black;
   display: flex;
   justify-content: center;
-  background: #000;
-  margin: 0;
 }
 
 .single-post__image img {
-  object-fit: contain;
-  max-height: 500px;
   width: 100%;
+  max-height: 80vh;
+  /* Allow Taller images in single view */
+  object-fit: contain;
 }
 
-/* Footer Actions */
-.single-post__footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-}
-
-.single-post__likes {
+/* Actions Bar */
+.single-post__actions-bar {
+  padding: 0.75rem 1rem 0 1rem;
   display: flex;
   align-items: center;
 }
 
-.single-post__creator-actions {
+.single-post__actions-icons {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.post__like-btn {
+/* Reuse the post action btn styles from Post.css implicitly or redefine? */
+/* We redefined them in Post.css but SinglePost css is scoped/separate file usually unless import. */
+/* Let's redefine for safety/independence */
+.post__action-btn {
   background: none;
   border: none;
+  padding: 0;
   cursor: pointer;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--text-primary);
-  font-size: 1.2rem;
-  /* Larger icon */
-  padding: 0.25rem;
-  border-radius: 4px;
+  transition: transform 0.1s;
 }
 
-.post__like-btn:hover {
-  opacity: 0.7;
+.post__action-btn:active {
+  transform: scale(0.9);
 }
 
-.post__like-btn.liked {
+.post__action-btn.liked {
   color: #ed4956;
 }
 
-@media (min-width: 768px) {
-  .single-post {
-    border: 1px solid var(--border-color);
-  }
+/* Likes Count */
+.single-post__likes-container {
+  padding: 0.5rem 1rem 0 1rem;
 }
 
-@media (max-width: 767px) {
+.single-post__likes-count {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Body / Content */
+.single-post__body {
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+
+.single-post__caption {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.single-post__caption-author {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.single-post__date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
   .single-post {
-    width: 100%;
     margin: 0;
     border: none;
     border-radius: 0;
-    box-shadow: none;
-  }
-}
-
-.single-post__header {
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.single-post h1 {
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.single-post h2 {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
-/* Centered Body */
-.single-post__body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Centers content horizontally */
-  margin-bottom: 2rem;
-}
-
-.single-post__content {
-  text-align: left;
-  /* Keep text left-aligned for readability, but container is centered if we set max-width */
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 1.5rem 0;
-  max-width: 100%;
-  /* Or constrain it if needed */
-  width: 100%;
-}
-
-.single-post__image {
-  height: auto;
-  max-height: 35rem;
-  /* Slightly larger */
-  width: 100%;
-  border-radius: 4px;
-  /* Soften edges */
-  margin: 1rem auto;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  background: var(--bg-primary);
-  /* placeholder bg */
-}
-
-/* Footer Actions */
-.single-post__footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
-  margin-top: 1rem;
-  min-height: 50px;
-}
-
-.single-post__creator-actions {
-  display: flex;
-  gap: 1rem;
-  margin-left: auto;
-  /* Push to right */
-}
-
-.single-post__likes {
-  display: flex;
-  align-items: center;
-}
-
-.post__like-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-primary);
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.post__like-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.post__like-btn.liked {
-  color: #ed4956;
-}
-
-
-@media (min-width: 768px) {
-  .single-post {
-    width: 80%;
-    max-width: 800px;
-    padding: 3rem;
-  }
-}
-
-@media (max-width: 767px) {
-  .single-post {
-    width: 100%;
-    padding: 1rem;
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .single-post h1 {
-    font-size: 1.5rem;
-  }
-
-  .single-post__image {
-    max-height: 20rem;
-  }
-
-  .single-post__footer {
-    flex-direction: row;
-    /* Keep row for mobile too usually better */
+    border-top: 1px solid var(--border-color);
   }
 }

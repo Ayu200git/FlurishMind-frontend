@@ -1,49 +1,59 @@
 .post {
-  margin: 1rem 0;
-  border: 1px solid var(--accent-color);
-  border-radius: 5px;
-  padding: 0.5rem;
+  margin: 0 auto 1.5rem auto;
+  /* Centered, bottom margin */
   background-color: var(--bg-secondary);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  /* Slightly smoother */
+  padding: 0;
+  width: 100%;
+}
+
+.post__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
 }
 
 .post__user {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.5rem;
 }
 
 .post__user-image {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 1px solid var(--border-color);
+  /* Subtle border */
 }
 
 .post__user-placeholder {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--accent-color);
-  color: var(--bg-primary);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .post__user-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
 
 .post__author {
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text-primary);
   font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 .post__date {
@@ -51,148 +61,119 @@
   color: var(--text-secondary);
 }
 
-.post__meta {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
 .post__title {
-  font-size: 1.5rem;
-  margin: 1rem 0;
-  color: var(--text-primary);
+  /* Generally Instagram doesn't have Titles, but we keep it discreet or as part of caption */
+  display: none;
 }
 
+/* Image */
 .post__image {
   width: 100%;
-  max-height: 20rem;
-  /* Limit max height but allow it to be 0 or auto if needed */
-  height: auto;
-  overflow: hidden;
-  margin-bottom: 1rem;
+  margin: 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: black;
+  /* Loading state */
+  display: flex;
+  justify-content: center;
 }
 
-.post__actions {
+.post__image img {
+  width: 100%;
+  /* Removed max-height constraint to allow full view or reasonable limit */
+  max-height: 600px;
+  object-fit: contain;
+}
+
+/* Actions Bar */
+.post__actions-bar {
+  padding: 0.75rem 1rem 0 1rem;
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post__actions-icons {
+  display: flex;
   gap: 1rem;
-  justify-content: flex-start;
-  align-items: center;
 }
 
-.post__actions-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.post__content {
-  color: var(--text-primary);
-  line-height: 1.6;
-  margin: 1rem 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  /* Ensure long words break */
-  word-break: break-word;
-  /* Fallback for older browsers */
-  max-width: 100%;
-  /* Ensure it doesn't exceed container */
-}
-
-/* Tablet styles */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .post {
-    padding: 1.5rem;
-    max-width: 650px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .post__title {
-    font-size: 1.7rem;
-  }
-
-  .post__user-image,
-  .post__user-placeholder {
-    width: 42px;
-    height: 42px;
-  }
-}
-
-/* Desktop styles */
-@media (min-width: 1024px) {
-  .post {
-    padding: 1.5rem;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .post__title {
-    font-size: 1.75rem;
-  }
-}
-
-/* Mobile styles */
-@media (max-width: 767px) {
-  .post {
-    margin: 0.5rem;
-    padding: 1rem;
-    width: auto;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .post__actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .post__actions button {
-    width: 100%;
-    margin: 0.25rem 0;
-  }
-
-  .post__user-image,
-  .post__user-placeholder {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
-  }
-}
-
-/* Like Button Styles */
-.post__like-btn {
+.post__action-btn {
   background: none;
   border: none;
+  padding: 0;
   cursor: pointer;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  color: var(--text-secondary);
-  padding: 0.5rem;
-  border-radius: 5px;
-  transition: all 0.2s;
+  transition: transform 0.1s;
 }
 
-.post__like-btn:hover {
-  background-color: var(--bg-hover);
+.post__action-btn:active {
+  transform: scale(0.9);
 }
 
-.post__like-btn.liked {
+.post__action-btn.liked {
   color: #ed4956;
 }
 
-.post__like-btn.liked span {
-  font-weight: bold;
+.post__action-btn svg {
+  width: 28px;
+  height: 28px;
 }
 
-.post__like-btn svg {
-  transition: transform 0.2s;
+/* Likes Count */
+.post__likes-container {
+  padding: 0.5rem 1rem 0 1rem;
 }
 
-.post__like-btn:active svg {
-  transform: scale(1.2);
+.post__likes-count {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Caption Section context */
+.post__caption-section {
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+
+.post__caption {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.post__caption-author {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.post__view-comments {
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  padding: 0 !important;
+  text-transform: none !important;
+  font-weight: 400 !important;
+  border: none !important;
+  margin-top: 0.25rem;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .post {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .post {
+    max-width: 470px;
+    /* Classic Insta feed width */
+  }
 }

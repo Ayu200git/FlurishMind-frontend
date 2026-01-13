@@ -445,15 +445,8 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
   const handleAddReply = async (commentId, content) => {
     if (!authToken) return setFlashMessage({ message: 'Please login to reply', type: 'error' });
     try {
-      // Find the post ID - scan posts to find which one contains this commentId in its tree
-      // For addReply, we need postId for mutation.
-      // We can try to find it from state.
       let targetPostId = null;
       posts.forEach(p => {
-        // Simple check if top level comment matches, or we need recursive find.
-        // Actually, we can just pass posts[0]?._id if we are lazy but that's wrong for feed.
-        // Better: The caller (Comments component) doesn't pass postId for replies deep down.
-        // But we can iterate to find it.
         const findInComments = (comments) => {
           for (let c of comments) {
             if (c._id === commentId) return true;
@@ -697,81 +690,88 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         </section>
       )}
       <section className="feed">
-        {postsLoading ? (
+        {postsLoading && posts.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: '2rem' }}><Loader /></div>
-        ) : posts.length === 0 ? (
-          <p style={{ textAlign: 'center' }}>No posts found.</p>
         ) : (
-          <div className={isListView ? "feed__list-view" : "feed__list"}>
-            {isListView ? (
-              /* List View - Standard Pagination */
-              <Paginator
-                onPrevious={() => loadPosts(postPage - 1)}
-                onNext={() => loadPosts(postPage + 1)}
-                onPageChange={(page) => loadPosts(page)}
-                currentPage={postPage}
-                lastPage={Math.ceil(totalPosts / perPage)}
-                totalItems={totalPosts}
-                perPage={perPage}
-                onPerPageChange={(newLimit) => {
-                  setPerPage(newLimit);
-                  setPostPage(1); // Reset to page 1
-                }}
-              >
-                {posts.map(post => (
-                  <PostListItem
-                    key={post._id}
-                    post={post}
-                    onLike={userId ? handleLike : null}
-                    token={authToken}
-                    currentUserId={userId}
-                    onAddComment={handleAddComment}
-                    onEditComment={(id, content) => handleEditComment(post._id, id, content)}
-                    onDeleteComment={(id) => handleDeleteComment(post._id, id)}
-                    onLoadMoreComments={handleLoadMoreComments}
-                    onLoadMoreReplies={handleLoadMoreReplies}
-                    onAddReply={handleAddReply}
-                    onEditReply={handleEditReply}
-                    onDeleteReply={handleDeleteReply}
-                    onLikeComment={handleLikeComment}
-                  />
-                ))}
-              </Paginator>
+          <Fragment>
+            {posts.length === 0 ? (
+              <p style={{ textAlign: 'center' }}>No posts found.</p>
             ) : (
-              /* Grid View - Infinite Scroll */
-              posts.map(post => (
-                <Post
-                  key={post._id}
-                  id={post._id}
-                  author={post.creator?.name || 'Unknown'}
-                  authorImage={post.creator?.avatar}
-                  date={new Date(post.createdAt).toLocaleDateString('en-US')}
-                  title={post.title}
-                  image={post.imageUrl}
-                  content={post.content}
-                  onStartEdit={userId === post.creator?._id ? () => startEditPostHandler(post._id) : null}
-                  onDelete={userId === post.creator?._id ? () => deletePostHandler(post._id) : null}
-                  currentUserId={userId}
-                  creatorId={post.creator?._id}
-                  likes={post.likes || []}
-                  likesCount={post.likesCount || 0}
-                  comments={post.comments || []}
-                  commentsCount={post.commentsCount || 0}
-                  onLike={userId ? () => handleLike(post._id) : null}
-                  onAddComment={handleAddComment}
-                  onEditComment={(id, content) => handleEditComment(post._id, id, content)}
-                  onDeleteComment={(id) => handleDeleteComment(post._id, id)}
-                  onLoadMoreComments={handleLoadMoreComments}
-                  onLoadMoreReplies={handleLoadMoreReplies}
-                  onAddReply={handleAddReply}
-                  onEditReply={handleEditReply}
-                  onDeleteReply={handleDeleteReply}
-                  onLikeComment={handleLikeComment}
-                  token={authToken}
-                />
-              ))
+              <div className={isListView ? "feed__list-view" : "feed__list"}>
+                {isListView ? (
+                  /* List View - Standard Pagination */
+                  <Paginator
+                    onPrevious={() => loadPosts(postPage - 1)}
+                    onNext={() => loadPosts(postPage + 1)}
+                    onPageChange={(page) => loadPosts(page)}
+                    currentPage={postPage}
+                    lastPage={Math.ceil(totalPosts / perPage)}
+                    totalItems={totalPosts}
+                    perPage={perPage}
+                    onPerPageChange={(newLimit) => {
+                      setPerPage(newLimit);
+                      setPostPage(1); // Reset to page 1
+                    }}
+                  >
+                    {posts.map(post => (
+                      <PostListItem
+                        key={post._id}
+                        post={post}
+                        onLike={userId ? handleLike : null}
+                        token={authToken}
+                        currentUserId={userId}
+                        onAddComment={handleAddComment}
+                        onEditComment={(id, content) => handleEditComment(post._id, id, content)}
+                        onDeleteComment={(id) => handleDeleteComment(post._id, id)}
+                        onLoadMoreComments={handleLoadMoreComments}
+                        onLoadMoreReplies={handleLoadMoreReplies}
+                        onAddReply={handleAddReply}
+                        onEditReply={handleEditReply}
+                        onDeleteReply={handleDeleteReply}
+                        onLikeComment={handleLikeComment}
+                      />
+                    ))}
+                  </Paginator>
+                ) : (
+                  /* Grid View - Infinite Scroll */
+                  posts.map(post => (
+                    <Post
+                      key={post._id}
+                      id={post._id}
+                      author={post.creator?.name || 'Unknown'}
+                      authorImage={post.creator?.avatar}
+                      date={new Date(post.createdAt).toLocaleDateString('en-US')}
+                      title={post.title}
+                      image={post.imageUrl}
+                      content={post.content}
+                      onStartEdit={userId === post.creator?._id ? () => startEditPostHandler(post._id) : null}
+                      onDelete={userId === post.creator?._id ? () => deletePostHandler(post._id) : null}
+                      currentUserId={userId}
+                      creatorId={post.creator?._id}
+                      likes={post.likes || []}
+                      likesCount={post.likesCount || 0}
+                      comments={post.comments || []}
+                      commentsCount={post.commentsCount || 0}
+                      onLike={userId ? () => handleLike(post._id) : null}
+                      onAddComment={handleAddComment}
+                      onEditComment={(id, content) => handleEditComment(post._id, id, content)}
+                      onDeleteComment={(id) => handleDeleteComment(post._id, id)}
+                      onLoadMoreComments={handleLoadMoreComments}
+                      onLoadMoreReplies={handleLoadMoreReplies}
+                      onAddReply={handleAddReply}
+                      onEditReply={handleEditReply}
+                      onDeleteReply={handleDeleteReply}
+                      onLikeComment={handleLikeComment}
+                      token={authToken}
+                    />
+                  ))
+                )}
+              </div>
             )}
-          </div>
+            {!isListView && postsLoading && posts.length > 0 && (
+              <div className="infinite-scroll-loader"><Loader /></div>
+            )}
+          </Fragment>
         )}
       </section>
     </Fragment>

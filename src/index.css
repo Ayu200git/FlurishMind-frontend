@@ -14,20 +14,33 @@
   --danger-color: #a30000;
   --success-color: #00b359;
   --shadow: rgba(0, 0, 0, 0.26);
+  --bg-hover: #f0f0f0;
 }
 
 [data-theme="dark"] {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --text-primary: #ffffff;
-  --text-secondary: #cccccc;
-  --border-color: #444;
-  --accent-color: #fab83f;
-  --accent-hover: #fbc766;
-  --danger-color: #ff4444;
-  --success-color: #00ff88;
-  --shadow: rgba(0, 0, 0, 0.5);
+  /* Dark theme colors - Premium Aesthetic */
+  --bg-primary: #0a0a0a;
+  /* Deepest Black/Zinc */
+  --bg-secondary: #18181b;
+  /* Card Background (Zinc-900) */
+  --text-primary: #f4f4f5;
+  /* High Contrast Text (Zinc-100) */
+  --text-secondary: #a1a1aa;
+  /* Muted Text (Zinc-400) */
+  --border-color: #27272a;
+  /* Subtle Borders (Zinc-800) */
+  --accent-color: #a78bfa;
+  /* Vibrant Violet (Violet-400) */
+  --accent-hover: #8b5cf6;
+  /* Deep Violet Hover (Violet-500) */
+  --danger-color: #f87171;
+  /* Soft Red */
+  --success-color: #34d399;
+  /* Soft Green */
+  --shadow: rgba(0, 0, 0, 0.7);
+  /* Deeper Shadow */
+  --bg-hover: #27272a;
+  /* Hover State */
 }
 
 body {

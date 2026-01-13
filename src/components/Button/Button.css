@@ -47,7 +47,7 @@
 
 [data-theme="dark"] .button--flat:hover,
 [data-theme="dark"] .button--flat:active {
-  background: rgba(250, 184, 63, 0.3);
+  background: rgba(167, 139, 250, 0.2);
   color: var(--accent-color);
 }
 
@@ -63,30 +63,30 @@
 }
 
 .button.button--accent {
-  border-color: #fab83f;
-  color: #fab83f;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .button--accent:hover,
 .button--accent:active {
-  background: #fab83f;
-  color: #3b0062;
+  background: var(--accent-color);
+  color: var(--bg-primary);
 }
 
 .button--flat.button--accent:hover,
 .button--flat.button--accent:active {
-  background: rgba(250, 184, 63, 0.3);
-  color: #fab83f;
+  background: rgba(167, 139, 250, 0.2);
+  color: var(--accent-color);
 }
 
 .button.button--accent.button--raised {
-  background: #fab83f;
-  color: #3b0062;
+  background: var(--accent-color);
+  color: var(--bg-primary);
 }
 
 .button--raised.button--accent:hover,
 .button--raised.button--accent:active {
-  background: #fbc766;
+  background: var(--accent-hover);
 }
 
 .button.button--danger {

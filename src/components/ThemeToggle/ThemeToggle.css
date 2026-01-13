@@ -25,12 +25,14 @@
 }
 
 .theme-toggle--dark {
-  color: #fab83f;
   background-color: #1a1a1a;
+}
+
+[data-theme="dark"] .theme-toggle__icon {
+  color: var(--accent-color);
 }
 
 .theme-toggle:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 0, 98, 0.3);
 }
-

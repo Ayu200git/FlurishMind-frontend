@@ -1,42 +1,24 @@
+/* Comments Container */
 .comments {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .comments__content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-.comments__load-more {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.9rem;
-  align-self: center;
-}
-
-.comments__form {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.comments__list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
+/* Comment Item */
 .comment-item {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 0.5rem;
+  padding: 0 1rem;
 }
 
 .comment {
   display: flex;
+  align-items: flex-start;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .comment__avatar {
@@ -49,93 +31,225 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 1px solid var(--border-color);
 }
 
 .comment__avatar-placeholder {
   background: var(--accent-color);
-  color: white;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
   font-size: 0.8rem;
-  font-weight: bold;
 }
 
 .comment__content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  margin-top: 4px;
+  /* Align text top with avatar roughly */
 }
 
+/* Bubbles area contains Text + Author */
 .comment__bubbles {
-  background: var(--bg-secondary);
-  padding: 0.5rem 0.75rem;
-  border-radius: 12px;
-  display: inline-block;
-  align-self: flex-start;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.4;
 }
 
 .comment__author {
   font-weight: 600;
-  font-size: 0.9rem;
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
   color: var(--text-primary);
 }
 
 .comment__text {
-  font-size: 0.9rem;
+  word-wrap: break-word;
+}
+
+/* Metadata / Actions Bar (Bottom) */
+.comment__meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.comment__meta-time {
+  /* Just text, no specific styles needed yet */
+  font-size: 0.75rem;
+}
+
+.comment__meta-likes {
+  font-weight: 600;
+}
+
+.comment__meta-reply,
+.comment__meta-opts {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.comment__meta-reply:hover,
+.comment__meta-opts:hover {
   color: var(--text-primary);
 }
 
-.comment__actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.25rem;
-  margin-left: 0.5rem;
+/* Like Heart container */
+.comment__like-container {
+  padding-top: 8px;
+  /* Align with text */
+  padding-left: 0.5rem;
 }
 
-.comment__action-btn {
+.comment__like-heart {
   background: none;
   border: none;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
   cursor: pointer;
   padding: 0;
+  color: var(--text-secondary);
+  /* Default generic heart color */
+  display: flex;
+  align-items: center;
 }
 
-.comment__action-btn:hover {
-  text-decoration: underline;
-}
-
-.comment__action-btn.liked {
+.comment__like-heart.liked {
   color: #ed4956;
-  font-weight: 500;
 }
 
+.comment__like-heart svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Replies section */
+.comment__view-replies-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 3.5rem;
+  /* Indent */
+  margin-top: 0.5rem;
+}
+
+.comment__replies-line {
+  width: 24px;
+  height: 1px;
+  background: var(--text-secondary);
+  opacity: 0.4;
+}
+
+.comment__view-replies-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.comment__replies {
+  margin-left: 3rem;
+  /* Indent replies */
+  margin-top: 0.5rem;
+}
+
+/* Reply Input Form (Small) */
 .reply-form {
   margin-left: 3rem;
   margin-top: 0.5rem;
   display: flex;
   gap: 0.5rem;
-  align-items: center;
 }
 
-.comment__replies {
-  margin-left: 3rem;
-  margin-top: 1rem;
+.reply-form input {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Main Add Comment Form (Bottom of Post) */
+.comments__form {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border-left: 2px solid var(--border-color);
-  padding-left: 1rem;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
 }
 
-.load-more-replies {
+.comments__form .form-control {
+  margin: 0;
+  /* Override default input margins */
+}
+
+.comments__form input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.comments__form input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.comments__form button[type="submit"] {
+  background: none !important;
+  border: none !important;
+  color: var(--accent-color) !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: none !important;
+  padding: 0 0.5rem !important;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.comments__form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Edit Mode */
+.comment__edit-layout {
+  width: 100%;
+}
+
+.comment__edit-layout input {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.comment__edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.comment__action-btn-text {
   background: none;
   border: none;
-  color: var(--primary-color);
-  font-size: 0.85rem;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--accent-color);
   cursor: pointer;
-  align-self: flex-start;
-  margin-top: 0.5rem;
+  font-weight: 600;
 }
