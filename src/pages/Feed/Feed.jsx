@@ -218,12 +218,12 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         });
         if (!uploadRes.ok) throw new Error('Failed to upload image');
         imageUrl = (await uploadRes.json()).filePath;
-      } else imageUrl = postData.imageUrl || editPost?.imageUrl || null;
+      } else imageUrl = postData.imageUrl || editPost?.imageUrl || '';
 
       const isUpdate = !!editPost;
       const graphqlQuery = isUpdate
         ? {
-          query: `mutation UpdatePost($id: ID!, $title: String!, $content: String!, $imageUrl: String!) {
+          query: `mutation UpdatePost($id: ID!, $title: String!, $content: String!, $imageUrl: String) {
               updatePost(id: $id, postInput: { title: $title, content: $content, imageUrl: $imageUrl }) {
                 _id title content imageUrl creator { _id name } likes { _id } likesCount
                 comments { _id content creator { _id name } createdAt } commentsCount createdAt
@@ -232,7 +232,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
           variables: { id: editPost._id, title: postData.title, content: postData.content, imageUrl }
         }
         : {
-          query: `mutation CreatePost($title: String!, $content: String!, $imageUrl: String!) {
+          query: `mutation CreatePost($title: String!, $content: String!, $imageUrl: String) {
               createPost(postInput: { title: $title, content: $content, imageUrl: $imageUrl }) {
                 _id title content imageUrl creator { _id name } likes { _id } likesCount
                 comments { _id content creator { _id name } createdAt } commentsCount createdAt
