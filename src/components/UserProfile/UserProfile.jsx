@@ -23,7 +23,6 @@ const UserProfile = ({ token, userId, onLogout }) => {
               name
               username
               email
-              status
               role
               avatar
             }
@@ -53,6 +52,13 @@ const UserProfile = ({ token, userId, onLogout }) => {
     };
 
     fetchUser();
+
+    // Listen for profile updates from other components
+    window.addEventListener('profileUpdated', fetchUser);
+
+    return () => {
+      window.removeEventListener('profileUpdated', fetchUser);
+    };
   }, [token, userId]);
 
   if (loading) {
@@ -72,84 +78,32 @@ const UserProfile = ({ token, userId, onLogout }) => {
     .toUpperCase()
     .slice(0, 2);
 
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    return path.startsWith('http') ? path : `${import.meta.env.VITE_BACKEND_URL}/${path}`;
+  };
+
+  const avatarUrl = user.avatar ? getImageUrl(user.avatar) : null;
+
   return (
     <div className="user-profile">
       <button
         className="user-profile__toggle"
-        onClick={() => setShowProfile(!showProfile)}
-        aria-label="Toggle profile"
+        onClick={() => navigate(`/profile/${userId}`)}
+        aria-label="Go to profile"
       >
-        <div className="user-profile__avatar">
-          {initials}
-        </div>
-      </button>
-      {showProfile && (
-        <>
-          <div className="user-profile__backdrop" onClick={() => setShowProfile(false)} />
-          <div className="user-profile__dropdown">
-            <div className="user-profile__header">
-              <div className="user-profile__avatar-large">
-                {user.avatar ? (
-                  <img src={user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_BACKEND_URL}/${user.avatar}`} alt={user.name} />
-                ) : (
-                  initials
-                )}
-              </div>
-              <h3>{user.name}</h3>
-              {user.username && <p className="user-profile__username">@{user.username}</p>}
-            </div>
-            <div className="user-profile__menu">
-              <button
-                className="user-profile__menu-item"
-                onClick={() => {
-                  navigate(`/profile/${userId}`);
-                  setShowProfile(false);
-                }}
-              >
-                View Profile
-              </button>
-              <button
-                className="user-profile__menu-item"
-                onClick={() => {
-                  navigate(`/profile/${userId}?edit=true`);
-                  setShowProfile(false);
-                }}
-              >
-                Edit Profile
-              </button>
-              <button
-                className="user-profile__menu-item"
-                onClick={() => {
-                  navigate(`/profile/${userId}?tab=saved`);
-                  setShowProfile(false);
-                }}
-              >
-                Saved Posts
-              </button>
-              {user.role === 'admin' && (
-                <button
-                  className="user-profile__menu-item"
-                  onClick={() => {
-                    navigate('/admin');
-                    setShowProfile(false);
-                  }}
-                >
-                  Admin Dashboard
-                </button>
-              )}
-              <button
-                className="user-profile__menu-item user-profile__menu-item--logout"
-                onClick={() => {
-                  setShowProfile(false);
-                  if (onLogout) onLogout();
-                }}
-              >
-                Logout
-              </button>
-            </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={user.name}
+            className="user-profile__avatar-image"
+          />
+        ) : (
+          <div className="user-profile__avatar">
+            {initials}
           </div>
-        </>
-      )}
+        )}
+      </button>
     </div>
   );
 };

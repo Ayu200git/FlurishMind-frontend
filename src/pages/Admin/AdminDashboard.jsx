@@ -42,7 +42,6 @@ const AdminDashboard = ({ token, currentUserId }) => {
             name
             email
             role
-            status
           }
         }
       `,
@@ -171,23 +170,23 @@ const AdminDashboard = ({ token, currentUserId }) => {
 
   return (
     <div className="admin-dashboard">
-      <FlashMessage 
-        message={flashMessage?.message} 
+      <FlashMessage
+        message={flashMessage?.message}
         type={flashMessage?.type}
         onClose={() => setFlashMessage(null)}
       />
       <ErrorHandler error={error} onHandle={() => setError(null)} />
-      
+
       <h1>Admin Dashboard</h1>
-      
+
       <div className="admin-tabs">
-        <button 
+        <button
           className={activeTab === 'users' ? 'active' : ''}
           onClick={() => setActiveTab('users')}
         >
           Users ({users.length})
         </button>
-        <button 
+        <button
           className={activeTab === 'posts' ? 'active' : ''}
           onClick={() => setActiveTab('posts')}
         >
@@ -204,7 +203,6 @@ const AdminDashboard = ({ token, currentUserId }) => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -218,20 +216,19 @@ const AdminDashboard = ({ token, currentUserId }) => {
                         {user.role}
                       </span>
                     </td>
-                    <td>{user.status || 'N/A'}</td>
                     <td>
                       <div className="admin-actions">
                         {user.role !== 'admin' && (
-                          <Button 
-                            mode="flat" 
+                          <Button
+                            mode="flat"
                             onClick={() => handleMakeAdmin(user._id)}
                           >
                             Make Admin
                           </Button>
                         )}
                         {user._id !== currentUserId && (
-                          <Button 
-                            mode="flat" 
+                          <Button
+                            mode="flat"
                             design="danger"
                             onClick={() => handleDeleteUser(user._id)}
                           >

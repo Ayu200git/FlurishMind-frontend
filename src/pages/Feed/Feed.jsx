@@ -23,7 +23,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
   const [posts, setPosts] = useState([]);
   const [totalPosts, setTotalPosts] = useState(0);
   const [editPost, setEditPost] = useState(null);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(''); // Kept temporarily if needed by other components, but effectively unused
   const [savedPosts, setSavedPosts] = useState([]);
   const [postPage, setPostPage] = useState(1);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -41,7 +41,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     const fetchStatus = async () => {
       const graphqlQuery = {
         query: `query { 
-          user { status savedPosts { _id } } 
+          user { savedPosts { _id } } 
         }`
       };
       try {
@@ -55,7 +55,6 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         });
         const resData = await res.json();
         if (resData.errors) throw new Error(resData.errors[0].message);
-        setStatus(resData.data.user.status || '');
         // We set initial saved posts
         if (resData.data.user.savedPosts) {
           setSavedPosts(resData.data.user.savedPosts.map(p => p._id));
@@ -83,7 +82,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
             posts(page: $page, limit: $limit) {
               posts {
                 _id title content imageUrl
-                creator { _id name }
+                creator { _id name avatar }
                 likes { _id }
                 likesCount commentsCount
                 comments {
@@ -164,28 +163,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [postsLoading, totalPosts, posts.length, loadPosts, postPage, isListView]);
 
-  const statusUpdateHandler = async (event) => {
-    event.preventDefault();
-    const graphqlQuery = {
-      query: `mutation UpdateStatus($status: String!) { updateStatus(status: $status) { status } }`,
-      variables: { status }
-    };
-    try {
-      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + authToken
-        },
-        body: JSON.stringify(graphqlQuery)
-      });
-      const resData = await res.json();
-      if (resData.errors) throw new Error(resData.errors[0].message);
-      setStatus(resData.data.updateStatus.status || '');
-    } catch (err) {
-      catchError(err);
-    }
-  };
+  // Status update feature removed
 
   const newPostHandler = () => { if (!viewOnly) setIsEditing(true); };
 
@@ -261,7 +239,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     }
   };
 
-  const statusInputChangeHandler = (id, value) => setStatus(value);
+  // statusInputChangeHandler removed
 
   const deletePostHandler = async (postId) => {
     setPostsLoading(true);
@@ -714,21 +692,13 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
       <FlashMessage message={flashMessage?.message} type={flashMessage?.type} onClose={flashHandler} />
       <ErrorHandler error={error} onHandle={errorHandler} />
       <FeedEdit editing={isEditing} selectedPost={editPost} loading={editLoading} onCancelEdit={cancelEditHandler} onFinishEdit={finishEditHandler} />
-      {!viewOnly && (
-        <section className="feed__status">
-          <form onSubmit={statusUpdateHandler}>
-            <Input type="text" placeholder="Your status" control="input" value={status} onChange={statusInputChangeHandler} />
-            <Button mode="flat" type="submit">Update</Button>
-          </form>
-        </section>
-      )}
       <section className="feed">
         {postsLoading && posts.length === 0 ? (
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}><Loader /></div>
+          <div style={{ textAlign: 'center', marginTop: '2rem', alignItems: 'center' }}><Loader /></div>
         ) : (
           <Fragment>
             {posts.length === 0 ? (
-              <p style={{ textAlign: 'center' }}>No posts found.</p>
+              <p style={{ textAlign: 'center', alignItems: 'center' }}>No posts found.</p>
             ) : (
               <div className={isListView ? "feed__list-view" : "feed__list"}>
                 {isListView ? (
@@ -773,7 +743,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                       id={post._id}
                       author={post.creator?.name || 'Unknown'}
                       authorImage={post.creator?.avatar}
-                      date={new Date(post.createdAt).toLocaleDateString('en-US')}
+                      date={new Date(post.createdAt).toLocaleDateString()}
                       title={post.title}
                       image={post.imageUrl}
                       content={post.content}
@@ -803,8 +773,12 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                 )}
               </div>
             )}
+
+            {/* Infinite scroll loader - outside grid */}
             {!isListView && postsLoading && posts.length > 0 && (
-              <div className="infinite-scroll-loader"><Loader /></div>
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <Loader />
+              </div>
             )}
           </Fragment>
         )}

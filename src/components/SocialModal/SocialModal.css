@@ -1,0 +1,114 @@
+.social-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.social-modal {
+    background: var(--bg-secondary, white);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.social-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color, #dbdbdb);
+}
+
+.social-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.social-modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--text-secondary, #8e8e8e);
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.social-modal-body {
+    padding: 0.5rem 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.social-user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+}
+
+.social-user-item:hover {
+    background: var(--bg-primary, #fafafa);
+}
+
+.social-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.social-user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.social-user-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent-color, #0095f6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.social-user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.social-user-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary, #262626);
+}
+
+.social-user-username {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #8e8e8e);
+}
+
+.social-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary, #8e8e8e);
+}

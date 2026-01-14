@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../Button/Button';
 import Comments from '../../Comments/Comments';
 import Image from '../../Image/Image';
@@ -26,6 +27,7 @@ const PostListItem = ({
   onDeleteReply,
   onLikeComment
 }) => {
+  const navigate = useNavigate();
   const [showComments, setShowComments] = useState(false);
 
   const isLiked =
@@ -41,7 +43,11 @@ const PostListItem = ({
   return (
     <div className="post-list-wrap" style={{ marginBottom: '0.5rem' }}>
       <div className="post-list-item">
-        <div className="post-list-item__user">
+        <div
+          className="post-list-item__user"
+          onClick={() => post.creator?._id && navigate(`/profile/${post.creator._id}`)}
+          style={{ cursor: post.creator?._id ? 'pointer' : 'default' }}
+        >
           {post.creator?.avatar ? (
             <img
               src={getImageUrl(post.creator.avatar)}

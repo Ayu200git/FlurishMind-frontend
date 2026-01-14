@@ -62,8 +62,26 @@
 }
 
 .post__title {
-  /* Generally Instagram doesn't have Titles, but we keep it discreet or as part of caption */
   display: none;
+  /* Hide from header */
+}
+
+.post__content-section {
+  padding: 0.5rem 1rem;
+}
+
+.post__display-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.post__display-content {
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.4;
 }
 
 /* Image */
@@ -131,22 +149,6 @@
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-primary);
-}
-
-/* Caption Section context */
-.post__caption-section {
-  padding: 0.75rem 1rem 0.25rem 1rem;
-}
-
-.post__caption {
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  color: var(--text-primary);
-}
-
-.post__caption-author {
-  font-weight: 600;
-  margin-right: 0.5rem;
 }
 
 .post__view-post-btn {

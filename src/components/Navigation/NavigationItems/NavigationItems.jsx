@@ -43,9 +43,6 @@ const NavigationItems = ({ isAuth, mobile, onChoose, onLogout, onNewPost, onEdit
           <li className="navigation-item" key="saved">
             <NavLink to="/profile?tab=saved" onClick={onChoose}>Saved Posts</NavLink>
           </li>
-          <li className="navigation-item" key="logout">
-            <button onClick={onLogout}>Logout</button>
-          </li>
         </>
       )}
     </>

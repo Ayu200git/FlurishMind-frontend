@@ -1,11 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useViewMode } from '../../../context/ViewModeContext';
+import { useTheme } from '../../../context/ThemeContext';
 import './MobileNavigation.css';
 
 // NavigationItems component inside this file
 const NavigationItems = ({ isAuth, onChoose, onLogout, onNewPost, onEdit }) => {
   const { isListView, setIsListView } = useViewMode();
+  const { theme, toggleTheme } = useTheme();
   const navItems = [
     { id: 'feed', text: 'Feed', link: '/', auth: true },
     { id: 'login', text: 'Login', link: '/login', auth: false },
@@ -48,6 +50,11 @@ const NavigationItems = ({ isAuth, onChoose, onLogout, onNewPost, onEdit }) => {
           </li>
         </>
       )}
+      <li className="navigation-item mobile">
+        <button onClick={() => { toggleTheme(); onChoose(); }} style={{ fontSize: '1rem' }}>
+          {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+        </button>
+      </li>
     </>
   );
 };

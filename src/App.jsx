@@ -232,7 +232,7 @@ const App = () => {
 
       <Route
         path="/profile/:userId?"
-        element={<ProfilePage token={token} currentUserId={userId} />}
+        element={<ProfilePage token={token} currentUserId={userId} onLogout={logoutHandler} />}
       />
 
       <Route

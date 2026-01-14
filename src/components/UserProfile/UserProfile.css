@@ -17,18 +17,27 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--accent-color);
-  color: var(--bg-primary);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   transition: transform 0.2s ease;
 }
 
-.user-profile__avatar:hover {
-  transform: scale(1.1);
+.user-profile__avatar-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.user-profile__toggle:hover .user-profile__avatar,
+.user-profile__toggle:hover .user-profile__avatar-image {
+  transform: scale(1.05);
 }
 
 .user-profile__avatar-large {
@@ -71,6 +80,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -187,4 +197,3 @@
     font-size: 0.9rem;
   }
 }
-

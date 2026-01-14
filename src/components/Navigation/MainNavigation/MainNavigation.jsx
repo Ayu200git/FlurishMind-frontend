@@ -27,7 +27,6 @@ const MainNavigation = ({ onOpenMobileNav, isAuth, onLogout, onNewPost, onEdit, 
       {isAuth && userId && token && (
         <UserProfile token={token} userId={userId} onLogout={onLogout} />
       )}
-      <ThemeToggle />
     </div>
 
     <ul className="main-nav__items">

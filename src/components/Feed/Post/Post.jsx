@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../Button/Button';
 import Image from '../../Image/Image';
 import Comments from '../../Comments/Comments';
@@ -41,6 +42,7 @@ const Post = ({
   isSaved,
   token
 }) => {
+  const navigate = useNavigate();
   const isCreator =
     currentUserId && creatorId && currentUserId === creatorId;
 
@@ -59,7 +61,11 @@ const Post = ({
   return (
     <article className="post">
       <header className="post__header">
-        <div className="post__user">
+        <div
+          className="post__user"
+          onClick={() => creatorId && navigate(`/profile/${creatorId}`)}
+          style={{ cursor: creatorId ? 'pointer' : 'default' }}
+        >
           {authorAvatar ? (
             <img
               src={authorAvatar}
@@ -78,7 +84,6 @@ const Post = ({
           </div>
         </div>
 
-        <h1 className="post__title">{title}</h1>
       </header>
 
       {imageUrl && (
@@ -87,13 +92,9 @@ const Post = ({
         </div>
       )}
 
-      <div className="post__caption-section">
-        {content && (
-          <div className="post__caption">
-            <span className="post__caption-author">{author}</span>
-            <span className="post__caption-text">{content}</span>
-          </div>
-        )}
+      <div className="post__content-section">
+        {title && <h2 className="post__display-title">{title}</h2>}
+        {content && <p className="post__display-content">{content}</p>}
       </div>
 
       <div className="post__actions-bar">
