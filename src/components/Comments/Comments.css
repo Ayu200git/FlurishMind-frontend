@@ -70,7 +70,7 @@
   word-wrap: break-word;
 }
 
-/* Metadata / Actions Bar (Bottom) */
+/* Metadata / Actions Footer */
 .comment__meta-bar {
   display: flex;
   align-items: center;
@@ -252,4 +252,22 @@
   color: var(--accent-color);
   cursor: pointer;
   font-weight: 600;
+}
+
+/* Load More Button */
+.comments__load-more {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  display: block;
+}
+
+.comments__load-more:hover {
+  color: var(--text-primary);
 }

@@ -24,6 +24,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
   const [totalPosts, setTotalPosts] = useState(0);
   const [editPost, setEditPost] = useState(null);
   const [status, setStatus] = useState('');
+  const [savedPosts, setSavedPosts] = useState([]);
   const [postPage, setPostPage] = useState(1);
   const [postsLoading, setPostsLoading] = useState(true);
   const [editLoading, setEditLoading] = useState(false);
@@ -39,7 +40,9 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
 
     const fetchStatus = async () => {
       const graphqlQuery = {
-        query: `query { user { status } }`
+        query: `query { 
+          user { status savedPosts { _id } } 
+        }`
       };
       try {
         const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
@@ -53,6 +56,10 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         const resData = await res.json();
         if (resData.errors) throw new Error(resData.errors[0].message);
         setStatus(resData.data.user.status || '');
+        // We set initial saved posts
+        if (resData.data.user.savedPosts) {
+          setSavedPosts(resData.data.user.savedPosts.map(p => p._id));
+        }
       } catch (err) {
         catchError(err);
       }
@@ -211,7 +218,7 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
         });
         if (!uploadRes.ok) throw new Error('Failed to upload image');
         imageUrl = (await uploadRes.json()).filePath;
-      } else imageUrl = postData.imageUrl || editPost?.imageUrl || 'https://via.placeholder.com/150';
+      } else imageUrl = postData.imageUrl || editPost?.imageUrl || null;
 
       const isUpdate = !!editPost;
       const graphqlQuery = isUpdate
@@ -676,6 +683,32 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
     }
   };
 
+  const handleSavePost = async (postId) => {
+    if (!authToken) return setFlashMessage({ message: 'Please login to save posts', type: 'error' });
+    const isSaved = savedPosts.includes(postId);
+    try {
+      const graphqlQuery = {
+        query: `mutation ${isSaved ? 'UnsavePost' : 'SavePost'}($postId: ID!) {
+          ${isSaved ? 'unsavePost' : 'savePost'}(postId: $postId) { savedPosts { _id } }
+        }`,
+        variables: { postId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newSavedList = resData.data[isSaved ? 'unsavePost' : 'savePost'].savedPosts.map(p => p._id);
+      setSavedPosts(newSavedList);
+      setFlashMessage({ message: isSaved ? 'Post unsaved!' : 'Post saved!', type: 'success' });
+    } catch (err) {
+      setFlashMessage({ message: err.message || 'Failed to save/unsave post', type: 'error' });
+    }
+  };
+
   return (
     <Fragment>
       <FlashMessage message={flashMessage?.message} type={flashMessage?.type} onClose={flashHandler} />
@@ -762,6 +795,8 @@ const Feed = ({ userId, token, viewOnly = false, onNewPostRef, onEditRef }) => {
                       onEditReply={handleEditReply}
                       onDeleteReply={handleDeleteReply}
                       onLikeComment={handleLikeComment}
+                      onSave={() => handleSavePost(post._id)}
+                      isSaved={savedPosts.includes(post._id)}
                       token={authToken}
                     />
                   ))

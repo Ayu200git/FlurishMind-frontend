@@ -39,6 +39,11 @@ const NavigationItems = ({ isAuth, onChoose, onLogout, onNewPost, onEdit }) => {
             <button onClick={() => { onEdit(); onChoose(); }}>Edit</button>
           </li>
           <li className="navigation-item mobile">
+            <NavLink to="/profile?tab=saved" onClick={onChoose} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', font: 'inherit', cursor: 'pointer' }}>
+              Saved Posts
+            </NavLink>
+          </li>
+          <li className="navigation-item mobile">
             <button onClick={() => { onLogout(); onChoose(); }}>Logout</button>
           </li>
         </>

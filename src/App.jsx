@@ -21,9 +21,16 @@ const App = () => {
   const navigate = useNavigate();
   const [showBackdrop, setShowBackdrop] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
-  const [isAuth, setIsAuth] = useState(false);
-  const [token, setToken] = useState(null);
-  const [userId, setUserId] = useState(null);
+
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [userId, setUserId] = useState(localStorage.getItem("userId"));
+  const [isAuth, setIsAuth] = useState(() => {
+    const token = localStorage.getItem("token");
+    const expiryDate = localStorage.getItem("expiryDate");
+    if (!token || !expiryDate) return false;
+    if (new Date(expiryDate) <= new Date()) return false;
+    return true;
+  });
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState(null);
 

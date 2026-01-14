@@ -12,7 +12,6 @@
   border-radius: 5px;
   gap: 1rem;
   flex-wrap: wrap;
-  /* Allow wrapping on small screens */
 }
 
 @media (max-width: 600px) {

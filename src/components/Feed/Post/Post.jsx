@@ -4,7 +4,6 @@ import Image from '../../Image/Image';
 import Comments from '../../Comments/Comments';
 import './Post.css';
 
-/* ✅ helper to safely resolve image urls */
 const getImageUrl = (path) => {
   if (!path) return null;
   return path.startsWith('http')
@@ -38,6 +37,8 @@ const Post = ({
   onEditReply,
   onDeleteReply,
   onLikeComment,
+  onSave,
+  isSaved,
   token
 }) => {
   const isCreator =
@@ -52,7 +53,6 @@ const Post = ({
       (like) => like._id?.toString() === currentUserId?.toString()
     );
 
-  /* ✅ FIXED image url */
   const imageUrl = image ? getImageUrl(image) : null;
   const authorAvatar = authorImage ? getImageUrl(authorImage) : null;
 
@@ -81,11 +81,20 @@ const Post = ({
         <h1 className="post__title">{title}</h1>
       </header>
 
-      {imageUrl && imageUrl !== 'https://via.placeholder.com/150' && (
+      {imageUrl && (
         <div className="post__image">
           <Image imageUrl={imageUrl} contain />
         </div>
       )}
+
+      <div className="post__caption-section">
+        {content && (
+          <div className="post__caption">
+            <span className="post__caption-author">{author}</span>
+            <span className="post__caption-text">{content}</span>
+          </div>
+        )}
+      </div>
 
       <div className="post__actions-bar">
         {onLike && (
@@ -108,36 +117,45 @@ const Post = ({
 
             <button
               className="post__action-btn"
-              onClick={() => setShowComments(!showComments)}
+              onClick={() => {
+                if (!showComments && comments.length === 0 && commentsCount > 0) {
+                  onLoadMoreComments(id, 1);
+                }
+                setShowComments(!showComments);
+              }}
               title="Comments"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
               </svg>
             </button>
+
+            <button
+              className="post__action-btn"
+              onClick={onSave}
+              title={isSaved ? "Unsave" : "Save"}
+            >
+              {isSaved ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" color="#ed4956">
+                  <path fillRule="evenodd" d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0111.186 0z" />
+                </svg>
+              )}
+            </button>
           </div>
         )}
-
+        <Button mode="flat" link={`/post/${id}`} className="post__view-post-btn">
+          View Post
+        </Button>
       </div>
 
       <div className="post__likes-container">
         <span className="post__likes-count">
           {likesCount > 0 ? `${likesCount} likes` : '0 likes'}
         </span>
-      </div>
-
-      <div className="post__caption-section">
-        {content && (
-          <div className="post__caption">
-            <span className="post__caption-author">{author}</span>
-            <span className="post__caption-text">{content}</span>
-          </div>
-        )}
-        {commentsCount > 0 && !showComments && (
-          <Button mode="flat" className="post__view-comments" onClick={() => setShowComments(true)}>
-            View all {commentsCount} comments
-          </Button>
-        )}
       </div>
 
       {token && (

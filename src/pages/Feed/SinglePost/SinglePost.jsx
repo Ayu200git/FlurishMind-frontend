@@ -27,8 +27,41 @@ const SinglePost = ({ token }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
+  const [showComments, setShowComments] = useState(false);
+
   const authToken = token || localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
+
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Check valid auth before actions
+  useEffect(() => {
+    if (!authToken || !postId) return;
+    // Check if post is saved by user
+    const checkSaved = async () => {
+      try {
+        const query = {
+          query: `query { user { savedPosts { _id } } }`
+        };
+        const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + authToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(query)
+        });
+        const resData = await res.json();
+        if (resData.data?.user?.savedPosts) {
+          const isPostSaved = resData.data.user.savedPosts.some(p => p._id === postId);
+          setIsSaved(isPostSaved);
+        }
+      } catch (err) {
+        console.log("Error checking saved status", err);
+      }
+    };
+    checkSaved();
+  }, [authToken, postId]);
 
   useEffect(() => {
     if (!postId) return;
@@ -65,50 +98,20 @@ const SinglePost = ({ token }) => {
           },
           body: JSON.stringify(graphqlQuery)
         });
-
         const resData = await res.json();
         if (resData.errors) throw new Error(resData.errors[0].message);
 
-        // Fetch first 5 comments
-        const commentsQuery = {
-          query: `query PaginatedComments($postId: ID!, $page: Int!, $limit: Int!) {
-              paginatedComments(postId: $postId, page: $page, limit: $limit) {
-                comments {
-                  _id content creator { _id name email avatar } createdAt parentId
-                  likes { _id } likesCount
-                  repliesCount
-                  replies {
-                    _id content creator { _id name email avatar } createdAt parentId
-                    likes { _id } likesCount
-                    repliesCount
-                    replies { _id }
-                  }
-                }
-                totalComments hasMore
-              }
-            }`,
-          variables: { postId, page: 1, limit: 5 }
-        };
-        const commentsRes = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
-          body: JSON.stringify(commentsQuery)
-        });
-        const commentsData = await commentsRes.json();
-
         const fetchedPost = resData.data.post;
-        if (commentsData.data && commentsData.data.paginatedComments) {
-          fetchedPost.comments = commentsData.data.paginatedComments.comments;
-        } else {
-          fetchedPost.comments = [];
-        }
-
+        fetchedPost.comments = []; // Initialize empty
         setPost(fetchedPost);
-        setLoading(false);
+
+        // Load initial 5 comments
+        handleLoadMoreComments(postId, 1);
+
       } catch (err) {
         setError(err.message || 'Failed to fetch post');
-        setLoading(false);
       }
+      setLoading(false);
     };
 
     fetchPost();
@@ -244,9 +247,69 @@ const SinglePost = ({ token }) => {
     }
   };
 
+  const handleSavePost = async () => {
+    if (!authToken) return setError('Please login to save posts');
+    try {
+      const action = isSaved ? 'unsavePost' : 'savePost';
+      const graphqlQuery = {
+        query: `
+          mutation {
+            ${action}(postId: "${postId}") {
+              _id
+              savedPosts {
+                _id
+              }
+            }
+          }
+        `
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + authToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      setIsSaved(!isSaved);
+    } catch (err) {
+      setError(err.message || 'Failed to save/unsave post');
+    }
+  };
+
 
   const handleAddComment = async (postId, content) => {
-    handleAddCommentLogic(postId, content);
+    if (!authToken) return setError('Please login to comment');
+    try {
+      const graphqlQuery = {
+        query: `mutation AddComment($content: String!, $postId: ID!) {
+          addComment(commentInput: { content: $content, postId: $postId }) {
+            _id content creator { _id name email avatar } createdAt parentId likes { _id } likesCount
+            replies { _id } repliesCount
+          }
+        }`,
+        variables: { content, postId }
+      };
+      const res = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken },
+        body: JSON.stringify(graphqlQuery)
+      });
+      const resData = await res.json();
+      if (resData.errors) throw new Error(resData.errors[0].message);
+
+      const newComment = resData.data.addComment;
+      setPost(prev => ({
+        ...prev,
+        comments: [newComment, ...(prev.comments || [])],
+        commentsCount: (prev.commentsCount || 0) + 1
+      }));
+    } catch (err) {
+      setError(err.message || 'Failed to add comment');
+    }
   };
 
   const handleLoadMoreComments = async (postId, page) => {
@@ -611,11 +674,22 @@ const SinglePost = ({ token }) => {
         </header>
 
         {/* Image */}
-        {imageUrl && imageUrl !== 'https://via.placeholder.com/150' && (
+        {imageUrl && (
           <div className="single-post__image">
             <Image contain imageUrl={imageUrl} />
           </div>
         )}
+
+        {/* Body / Content - Moved above actions to match Feed */}
+        <div className="single-post__body">
+          <div className="single-post__caption">
+            <span className="single-post__caption-author">{post.creator?.name || 'Unknown'}</span>
+            <span className="single-post__content-text">{post.content}</span>
+          </div>
+          <div className="single-post__date">
+            {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+          </div>
+        </div>
 
         {/* Action Bar */}
         <div className="single-post__actions-bar">
@@ -638,10 +712,26 @@ const SinglePost = ({ token }) => {
               </button>
             )}
             {/* Dummy Comment Icon for visual consistency */}
-            <button className="post__action-btn">
+            <button className="post__action-btn" onClick={() => setShowComments(!showComments)} title="Comments">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="28" height="28">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
               </svg>
+            </button>
+
+            <button
+              className="post__action-btn"
+              onClick={handleSavePost}
+              title={isSaved ? "Unsave" : "Save"}
+            >
+              {isSaved ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                  <path fillRule="evenodd" d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="28" height="28">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0111.186 0z" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
@@ -649,17 +739,6 @@ const SinglePost = ({ token }) => {
         {/* Likes Count */}
         <div className="single-post__likes-container">
           <span className="single-post__likes-count">{post.likesCount || 0} likes</span>
-        </div>
-
-        {/* Body / Content */}
-        <div className="single-post__body">
-          <div className="single-post__caption">
-            <span className="single-post__caption-author">{post.creator?.name || 'Unknown'}</span>
-            <span className="single-post__content-text">{post.content}</span>
-          </div>
-          <div className="single-post__date">
-            {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          </div>
         </div>
 
         <Comments
@@ -677,7 +756,7 @@ const SinglePost = ({ token }) => {
           onDeleteReply={handleDeleteReply}
           onLoadMoreComments={handleLoadMoreComments}
           onLoadMoreReplies={handleLoadMoreReplies}
-          show={true}
+          show={showComments}
         />
       </section>
     </>

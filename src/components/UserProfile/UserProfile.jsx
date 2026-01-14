@@ -74,7 +74,7 @@ const UserProfile = ({ token, userId, onLogout }) => {
 
   return (
     <div className="user-profile">
-      <button 
+      <button
         className="user-profile__toggle"
         onClick={() => setShowProfile(!showProfile)}
         aria-label="Toggle profile"
@@ -90,8 +90,8 @@ const UserProfile = ({ token, userId, onLogout }) => {
             <div className="user-profile__header">
               <div className="user-profile__avatar-large">
                 {user.avatar ? (
-                   <img src={ user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_BACKEND_URL}/${user.avatar}`} alt={user.name}/>
-                  ) : (
+                  <img src={user.avatar.startsWith('http') ? user.avatar : `${import.meta.env.VITE_BACKEND_URL}/${user.avatar}`} alt={user.name} />
+                ) : (
                   initials
                 )}
               </div>
@@ -99,7 +99,7 @@ const UserProfile = ({ token, userId, onLogout }) => {
               {user.username && <p className="user-profile__username">@{user.username}</p>}
             </div>
             <div className="user-profile__menu">
-              <button 
+              <button
                 className="user-profile__menu-item"
                 onClick={() => {
                   navigate(`/profile/${userId}`);
@@ -108,7 +108,7 @@ const UserProfile = ({ token, userId, onLogout }) => {
               >
                 View Profile
               </button>
-              <button 
+              <button
                 className="user-profile__menu-item"
                 onClick={() => {
                   navigate(`/profile/${userId}?edit=true`);
@@ -117,8 +117,17 @@ const UserProfile = ({ token, userId, onLogout }) => {
               >
                 Edit Profile
               </button>
+              <button
+                className="user-profile__menu-item"
+                onClick={() => {
+                  navigate(`/profile/${userId}?tab=saved`);
+                  setShowProfile(false);
+                }}
+              >
+                Saved Posts
+              </button>
               {user.role === 'admin' && (
-                <button 
+                <button
                   className="user-profile__menu-item"
                   onClick={() => {
                     navigate('/admin');
@@ -128,7 +137,7 @@ const UserProfile = ({ token, userId, onLogout }) => {
                   Admin Dashboard
                 </button>
               )}
-              <button 
+              <button
                 className="user-profile__menu-item user-profile__menu-item--logout"
                 onClick={() => {
                   setShowProfile(false);
