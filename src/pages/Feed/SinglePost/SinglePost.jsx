@@ -637,7 +637,7 @@ const SinglePost = ({ token }) => {
   if (!post) {
     return (
       <section className="single-post" style={{ textAlign: 'center', padding: '2rem' }}>
-        <p>No post found.</p>
+        <p>No post found.. please Add a Post to start.</p>
       </section>
     );
   }
